@@ -1,4 +1,4 @@
-from blocks import Block, EmptyBlock
+from blocks import Block, EmptyBlock, Trash
 from direction_sys import Direction
 
 class Map:
@@ -10,21 +10,6 @@ class Map:
                     Ex:
                     zoom = 3
                     3 blocks prendront la totalité de la largeur de l'écran
-                --------------------------------------------------------------------------------------
-                Type de la matrice
-                coordonnée en 'x', puis en 'y'
-                    Ex:
-                            (x, 0)(x, 1)(x, 2)(x, 3)(x, 4)(x, 5)
-                            _____________________________________
-                    (0, y)  |     |     |     |     |     |     |
-                            |-----|-----|-----|-----|-----|-----|
-                    (1, y)  |     |     |     |     |     |     |
-                            |-----|-----|-----|-----|-----|-----|
-                    (2, y)  |     |     |     |     |     |     |
-                            |-----|-----|-----|-----|-----|-----|
-                    (3, y)  |     |     |     |     |     |     |
-                            |-----|-----|-----|-----|-----|-----|
-                    (4, y)  |_____|_____|_____|_____|_____|_____|
         """
 
         self.game= game
@@ -33,12 +18,21 @@ class Map:
         self.center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
         pass
 
+    @staticmethod
+    def create_coordonates(x = int, y = int):
+        return x, y
+    def get_block(self, x = int, y = int):
+        return self.matrice[x][y]
+
     @property
     def width(self):
-        return len(self.matrice[0]) if self.height else 0
+        return len(self.matrice or [])
     @property
     def height(self):
-        return len(self.matrice or [])
+        return len(self.matrice[0]) if self.width else 0
+    @property
+    def create_coordonates(self):
+        return Map.create_coordonates
 
     def generate_chuck(self, width: int, height: int) -> list[list[Block]]:
         """ Creates on random chuck and returns it
@@ -50,26 +44,51 @@ class Map:
         """
 
         generated= []
-        for dir in Direction.unconstruct(direction):
-            if dir == "north" or dir == "south":
+        for dir in Direction.listify(direction):
+            if dir == Direction.North or dir == Direction.South:
                 chunck= self.generate_chuck(self.width, size)
+                
                 for index, column in enumerate(self.matrice):
-                    if dir == "north":
+                    if index > self.width:
+                        self.create_chunks(Direction.East, 1)
+                    if dir == Direction.North:
+                        self.center = ( # As we modify all the map's block position, we need to modify the map's center
+                            self.center[0], 
+                            self.center[1] + size
+                        )
                         self.matrice[index] = chunck[index] + column
                     else:
                         self.matrice[index] += chunck[index]
-            elif dir == "east" or dir == "west":
+            elif dir == Direction.East or dir == Direction.West:
                 chunck= self.generate_chuck(size, self.height)
-                if dir == "east":
+
+                if dir == Direction.East:
                     self.matrice += chunck
                 else:
+                    self.center = ( # As we modify all the map's block position, we need to modify the map's center
+                        self.center[0] + size, 
+                        self.center[1]
+                    )
                     self.matrice = chunck + self.matrice
             else: raise AssertionError(f"Invalid chunk direction (received '{dir}')")
 
             generated.append(chunck)
         return tuple(generated)
+    
+    def __str__(self) -> str:
+        reversed_map: list[list[Block]]= []
+        for column in self.matrice:
+            for index, block in enumerate(column):
+                if index >= len(reversed_map):
+                    reversed_map.append([])
+                reversed_map[index].append(str(block))
+        str_map = "\n".join(["".join(column) for column in reversed_map])
+        return str_map
 
 if __name__ == "__main__":
-    m= Map(None)
-    m.create_chunks(Direction.fast())
-    print(m.matrice)
+    m= Map(None, init= [[Trash(None)]])
+    print(m.center)
+    m.create_chunks(Direction.fast("a"))
+    print(m)
+    print(m.center)
+    print(m.get_block(*m.center))

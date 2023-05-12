@@ -4,25 +4,25 @@ class Direction:
     South= 2
     West= 3
 
-    typeof= list[int]
+    typeof= list[int] | int
 
     @staticmethod
-    def get(direction: int) -> str:
+    def stringify(direction: int) -> str:
         assert type(direction) == int and 0 <= direction <= 3, "Invalid direction provided"
         for key in dir(Direction):
             if getattr(Direction, key) == direction:
                 return key.lower()
     @staticmethod
-    def unconstruct(directions: list[int]) -> list[str]:
-        return [Direction.get(direction) for direction in directions]
+    def listify(directions: list[int] | int) -> list[int]:
+        return directions if type(directions) == list else [directions]
     @staticmethod
-    def fast(direction: str= "a") -> list[int]:
+    def fast(direction: str= "") -> list[int]:
         """
             ----------------------------------------
-            'a' -> all direction (default)
+            'a' -> all direction (equivalent to 'nswe')
             'h' -> horizontaly (equivalent to 'we')
             'v' -> verticaly (equivalent to 'ns')
-            'x' -> static (equivalent to '')
+            'x' -> static (equivalent to '') (default)
 
             Can't be combined
             ----------------------------------------
@@ -56,9 +56,9 @@ class Direction:
             }[direction]()
 
 if __name__ == "__main__":
-    print(Direction.get(2))
+    print(Direction.stringify(2))
     print(Direction.fast())
     print(Direction.fast("h"))
     print(Direction.fast("sw"))
-    print(Direction.fast("we", list))
+    print(Direction.fast("we"))
     print(Direction.fast("x"))
