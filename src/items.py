@@ -1,21 +1,45 @@
 from uuid import uuid1
 
 class Item:
-    def __init__(self, game, name: str, value: float, texture= "default_item_texture") -> None:
+    def __init__(self, game, name: str, value: float, texture: str) -> None:
         from blocks import Block
         self.game= game
         self.id= uuid1()
         self.name= name
         self.value= value
-        self.texture= texture
+        self.texture= texture or name.lower()
         self.crafts: list[dict[Block, list[Item]]] = []
         pass
+
+class DiamondIngot(Item):
+    def __init__(self, game):
+        from blocks import DiamondGenerator
+        super().__init__(game, "diamond_ingot", 20)
+        self.crafts= [
+            {DiamondGenerator: []}
+        ]
 
 class GoldIngot(Item):
     def __init__(self, game):
         from blocks import GoldGenerator
-        super().__init__(game, "gold_ingot", 10, "gold_ingot")
+        super().__init__(game, "gold_ingot", 10)
         self.crafts= [
             {GoldGenerator: []}
         ]
-    
+
+class IronIngot(Item):
+    def __init__(self, game):
+        from blocks import IronGenerator
+        super().__init__(game, "iron_ingot", 5)
+        self.crafts= [
+            {IronGenerator: []}
+        ]
+
+class Cobble(Item):
+    def __init__(self, game) -> None:
+        from blocks import Generator
+        super().__init__(game, "cobble", 1)
+        self.crafts= [
+            {Generator: []}
+        ]
+

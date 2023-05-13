@@ -14,7 +14,7 @@ class Modules:
 class Game:
     Modules= Modules
     def __init__(self, player_name: str) -> None:
-        self.map = map.Map(self, init= [[blocks.GoldGenerator(self)]])
+        self.map = map.Map(self, init= [[blocks.GlobalSeller(self)]])
         self.player= player.Player(player_name)
         pass
 
