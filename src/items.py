@@ -1,9 +1,11 @@
 from uuid import uuid1
 
 class Item:
-    def __init__(self, game, name: str, value: float, texture: str) -> None:
+    def __init__(self, game, name: str, value: float, texture: str = None) -> None:
         from blocks import Block
-        self.game= game
+        from _main import Game
+
+        self.game: Game= game
         self.id= uuid1()
         self.name= name
         self.value= value
@@ -43,3 +45,5 @@ class Cobble(Item):
             {Generator: []}
         ]
 
+if __name__ == "__main__":
+    print({Cobble(None).id: "hello"})

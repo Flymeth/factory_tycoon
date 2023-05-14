@@ -4,19 +4,18 @@
 
 > quests.py
 
-* Faire la classe
+* Faire les différentes quêtes
 
 ## Player
 
 > player.py
 
-* méthode sell
-
 ## Map
 
 > map.py
 
-* faire la méthode generate_chuck dans `map.py`
+* faire la méthode create_chuck
+* faire en sorte que lorsque l'on place un block celui-ci se connecte à ses voisins et vice-versa
 
 ## Market
 

@@ -11,8 +11,9 @@ class Map:
                     zoom = 3
                     3 blocks prendront la totalité de la largeur de l'écran
         """
+        from _main import Game
 
-        self.game= game
+        self.game: Game= game
         self.zoom= zoom
         self.matrice= init
         self.center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
@@ -21,9 +22,6 @@ class Map:
     @staticmethod
     def create_coordonates(x = int, y = int):
         return x, y
-    def get_block(self, x = int, y = int):
-        return self.matrice[x][y]
-
     @property
     def width(self):
         return len(self.matrice or [])
@@ -33,12 +31,11 @@ class Map:
     @property
     def create_coordonates(self):
         return Map.create_coordonates
-
-    def generate_chuck(self, width: int, height: int) -> list[list[Block]]:
+    def create_chuck(self, width: int, height: int) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
         return [[EmptyBlock(self.game) for y in range(height)] for x in range(width)]
-    def create_chunks(self, direction: Direction.typeof= Direction.fast(), size= 20) -> tuple[list[list[Block]]]:
+    def generate_chunks(self, direction: Direction.typeof= Direction.fast(), size= 20) -> tuple[list[list[Block]]]:
         """ Creates chunks in different directions and add them directly to the map
             Returns a tuple containing the created chunks in order of the given directions orders
         """
@@ -46,21 +43,21 @@ class Map:
         generated= []
         for dir in Direction.listify(direction):
             if dir == Direction.North or dir == Direction.South:
-                chunck= self.generate_chuck(self.width, size)
-                
+                chunck= self.create_chuck(self.width, size)
                 for index, column in enumerate(self.matrice):
                     if index > self.width:
-                        self.create_chunks(Direction.East, 1)
+                        self.generate_chunks(Direction.East, 1)
                     if dir == Direction.North:
-                        self.center = ( # As we modify all the map's block position, we need to modify the map's center
-                            self.center[0], 
-                            self.center[1] + size
-                        )
                         self.matrice[index] = chunck[index] + column
                     else:
                         self.matrice[index] += chunck[index]
+                
+                self.center = ( # As we modify all the map's block position, we need to modify the map's center
+                    self.center[0], 
+                    self.center[1] + size
+                )
             elif dir == Direction.East or dir == Direction.West:
-                chunck= self.generate_chuck(size, self.height)
+                chunck= self.create_chuck(size, self.height)
 
                 if dir == Direction.East:
                     self.matrice += chunck
@@ -75,6 +72,38 @@ class Map:
             generated.append(chunck)
         return tuple(generated)
     
+    def place(self, block: Block, coordonates: tuple[int, int]):
+        """ Places a block in the map
+            This method crashes if there is another block at this position
+        """
+        assert type(self.get_block(*coordonates)) == EmptyBlock, "Tried to place a block above another"
+        # for overflow_x in range(-1, 2):
+        #     for overflow_y in range(-1, 2):
+        #         if overflow_x == overflow_y == 0: continue
+        #         x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
+        #         if 0 <= x <= self.width and 0 <= y <= self.height:
+        #             self.matrice[x][y].connected
+        # ^^^^^^^ Not finished
+        self.matrice[coordonates[0]][coordonates[1]]= block
+    def delete(self, coordonates: tuple[int, int]) -> Block:
+        """ Deletes a block in the map and returns it
+            This method crashes if there isn't any block at this position
+        """
+        assert type(self.get_block(*coordonates)) != EmptyBlock, "Tried to delete the floor"
+        x, y= coordonates
+        deleted = self.matrice[x][y]
+        self.matrice[x][y]= EmptyBlock(self.game)
+        return deleted
+    def get_block(self, x = int, y = int):
+        return self.matrice[x][y]
+    def find_blocks(self, predicate= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
+        return [
+            ((x, y), self.matrice[x][y])
+            for x in range(len(self.matrice))
+            for y in range(len(self.matrice[x]))
+            if predicate(self.matrice[x][y])
+        ]
+
     def __str__(self) -> str:
         reversed_map: list[list[Block]]= []
         for column in self.matrice:
@@ -84,11 +113,13 @@ class Map:
                 reversed_map[index].append(str(block))
         str_map = "\n".join(["".join(column) for column in reversed_map])
         return str_map
+    def __len__(self) -> int:
+        return len(self.matrice) * len(self.matrice[0])
 
 if __name__ == "__main__":
     m= Map(None, init= [[Trash(None)]])
     print(m.center)
-    m.create_chunks(Direction.fast("a"))
+    m.generate_chunks(Direction.fast("wn"))
     print(m)
     print(m.center)
     print(m.get_block(*m.center))
