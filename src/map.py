@@ -1,21 +1,12 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldGenerator
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldGenerator, Sorter
 from direction_sys import Direction
 from typing import Callable
 
 class Map:
-    def __init__(self, game, zoom= 15, init: list[list[Block]]= []) -> None:
-        """
-            Note:
-                Zoom
-                Le zoom correspond au nombre de blocks que le joueur peut voir sur une ligne de large
-                    Ex:
-                    zoom = 3
-                    3 blocks prendront la totalité de la largeur de l'écran
-        """
+    def __init__(self, game, init: list[list[Block]]= []) -> None:
         from _main import Game
 
         self.game: Game= game
-        self.zoom= zoom
         self.matrice= init
         self.floor= self.create_chuck(self.width, self.height)
         self.center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
@@ -30,9 +21,6 @@ class Map:
     @property
     def height(self):
         return len(self.matrice[0]) if self.width else 0
-    @property
-    def create_coordonates(self):
-        return Map.create_coordonates
     def create_chuck(self, width: int, height: int) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
@@ -88,18 +76,69 @@ class Map:
             assert isinstance(block.extracts, type(actual_block.ressource)), "Tried to place a generator on an invalid mine"
         self.matrice[coordonates[0]][coordonates[1]]= block
 
-        # Connect block with sided ones
-        # for overflow_x in range(-1, 2):
-        #     for overflow_y in range(-1, 2):
-        #         if bool(overflow_x) != bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
-        #         x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
-        #         if 0 <= x <= self.width and 0 <= y <= self.height:
-        #             side_block= self.matrice[x][y]
-        #             for input_index in range(len(block.inputs)):
-        #                 input_direction= block.inputs[input_index]
-                        
-        #             self.matrice[x][y].connected
-        # ^^^^^^^ Not finished
+        # Connect block with sided ones #
+        for overflow_x in range(-1, 2):
+            for overflow_y in range(-1, 2):
+                if bool(overflow_x) == bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
+                x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
+                if 0 <= x <= self.width and 0 <= y <= self.height:
+                    side_block= self.get_block(x, y)
+                    if isinstance(side_block, FloorBlock): continue
+
+                    # Sided_block connection side (without any rotation)
+                    initial_sided_possible_connection= \
+                        Direction.North if overflow_y == 1 else \
+                        Direction.South if overflow_y == -1 else \
+                        Direction.East if overflow_x == -1 else Direction.West
+                    # Same with rotation
+                    rotated_sided_possible_connection= Direction.rotate(initial_sided_possible_connection, side_block.right_rotations)
+                    if not (
+                        initial_sided_possible_connection in side_block.inputs + side_block.outputs
+                    ): continue
+
+                    # Block connection side (without any rotation)
+                    initial_block_possible_connection= (initial_sided_possible_connection +2) %4
+                    # Same with rotation
+                    rotated_block_possible_connection= Direction.rotate(initial_block_possible_connection, block.right_rotations)
+                    if not (
+                        initial_block_possible_connection in block.inputs + block.outputs
+                    ): continue
+
+                    expected_rotated_sided_connection= (rotated_block_possible_connection +2) %4
+                    if (expected_rotated_sided_connection == rotated_sided_possible_connection
+                        and ((
+                            initial_sided_possible_connection in side_block.inputs
+                            and initial_block_possible_connection in block.outputs
+                        )or (
+                            initial_sided_possible_connection in side_block.outputs
+                            and initial_block_possible_connection in block.inputs
+                        )
+                    )):
+                        receiver, sender = (
+                            (block, side_block) 
+                            if initial_block_possible_connection in block.inputs
+                            else (side_block, block)
+                        )
+                        receiver_connection, sender_connection= (
+                            (initial_block_possible_connection, initial_sided_possible_connection)
+                            if receiver == block
+                            else (initial_sided_possible_connection, initial_block_possible_connection)
+                        )
+
+                        # Get input/output connection index
+                        receiver_input_index= receiver.inputs.index(receiver_connection)
+                        sender_output_index = sender.outputs.index(sender_connection)
+
+                        # Connect both blocks
+                        receiver.connected["in"]= [
+                            connection for connection in receiver.connected["in"]
+                            if connection[0] != receiver_input_index
+                        ] + [(receiver_input_index, sender)]
+                        sender.connected["out"]= [
+                            connection for connection in sender.connected["out"]
+                            if connection[0] != sender_output_index
+                        ] + [(sender_output_index, receiver)]
+        # ----------------------------------------------------------------------------- #
     def delete(self, coordonates: tuple[int, int]) -> Block:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position
@@ -142,3 +181,9 @@ if __name__ == "__main__":
     print(m.get_block(*m.center))
     print(type(MineBlock(None, GoldIngot(None)).ressource), type(GoldGenerator(None).extracts))
     print(isinstance(MineBlock(None, GoldIngot(None)).ressource, type(GoldGenerator(None).extracts)))
+
+    my_trash= Trash(None)
+    my_sorter= Sorter(None)
+    m.place(my_trash, Map.create_coordonates(5, 5))
+    m.place(my_sorter, Map.create_coordonates(5, 4))
+    pass

@@ -8,6 +8,7 @@ from direction_sys import Direction
 from uuid import uuid1, UUID
 from typing import Callable, Self
 import pygame as pg
+from camera import Camera
 
 class Modules:
     blocks= blocks
@@ -35,6 +36,7 @@ class Game:
     Modules= Modules
     def __init__(self, player_name: str, max_fps= 60) -> None:
         self.map= map.Map(self, init= [[blocks.GlobalSeller(self)]])
+        self.cam= Camera(self)
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.quests: list[quests.Quest]= []
@@ -45,20 +47,25 @@ class Game:
 
         self.pygame= Pygame(max_fps)
         self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None]]]]= {}
+        self.running= True
         pass
     def start(self):
         """ Starts the game
         """
+        self.add_event(pg.QUIT, lambda g, e: self.quit())
         while 1:
             for event in self.pygame.app.event.get():
-                self.call_event(event.type, event)
-
-            self.pygame.screen.fill("orange")
+                self.fire_event(event.type, event)
+            if not self.running: break
+            
+            self.cam.draw()
+            self.pygame.screen.fill("purple")
             self.pygame.tick()
     def quit(self):
         """ Quits and close the game
         """
-        return self.pygame.app.quit
+        self.running= False
+        return self.pygame.app.quit()
     
     # EVENT MANAGERS
     def add_event(self, ev_name: str, handler: Callable[[Self, pg.event.Event], None]):
@@ -110,5 +117,8 @@ if __name__ == "__main__":
     print(g.events)
     g.rmv_event("test")
     print(g.events)
+
+
+    g.start()
 
     print(g.quests)

@@ -42,19 +42,21 @@ class Direction:
             Can be combined like 'sn', 'nse', ...
             ----------------------------------------
         """
-        if direction == "": return []
+        if not direction: return []
         dir_len= len(direction)
         combinable= not (direction in "avhx")
         assert 0 < dir_len <= 4, "Direction input must have between 1 and 4 letters"
         assert combinable or dir_len == 1, "Incombinable letter has been combined"
         if combinable:
-            if dir_len > 1: return [Direction.fast(letter) for letter in direction]
-            return {
-                "n": Direction.North,
-                "s": Direction.South,
-                "e": Direction.East,
-                "w": Direction.West
-            }[direction]
+            if dir_len > 1: return [Direction.fast(letter)[0] for letter in direction]
+            return [
+                {
+                    "n": Direction.North,
+                    "s": Direction.South,
+                    "e": Direction.East,
+                    "w": Direction.West
+                }[direction]
+            ]
         else:
             return {
                 "a": lambda: Direction.fast("nesw"),

@@ -15,13 +15,18 @@
 > map.py
 
 * faire la méthode create_chuck
-* faire en sorte que lorsque l'on place un block celui-ci se connecte à ses voisins et vice-versa (doit prendre en charge la rotation)
 
 ## Market
 
 > market.py
 
 * faire la classe
+
+## Camera
+
+> camera.py
+
+* faire la méthode draw
 
 ## Other
 
