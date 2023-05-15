@@ -4,6 +4,8 @@ class Direction:
     South= 2
     West= 3
 
+    single= int
+    multiple= list[int]
     typeof= list[int] | int
 
     @staticmethod
@@ -15,6 +17,12 @@ class Direction:
     @staticmethod
     def listify(directions: list[int] | int) -> list[int]:
         return directions if type(directions) == list else [directions]
+    @staticmethod
+    def rotate(initial: int, times_rotating_right: int = 0, times_rotating_left: int= 0):
+        result= initial
+        for _ in range(times_rotating_left): result = (result - 1)% 4
+        for _ in range(times_rotating_right): result = (result + 1)% 4
+        return result
     @staticmethod
     def fast(direction: str= "") -> list[int]:
         """
@@ -62,3 +70,4 @@ if __name__ == "__main__":
     print(Direction.fast("sw"))
     print(Direction.fast("we"))
     print(Direction.fast("x"))
+    print(Direction.stringify(Direction.rotate(Direction.North, times_rotating_right=1)), Direction.East)

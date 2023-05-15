@@ -3,20 +3,33 @@ from items import Item
 from random import random, choice
 
 class Block:
-    def __init__(self, game, type: str, inputs: Direction.typeof= Direction.fast(), outputs: Direction.typeof= Direction.fast(), texture= "default_block_texture", decorative=False, default_level= 1, max_level= 20) -> None:
+    def __init__(self, game, type: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "default_block_texture", decorative=False, default_level= 1, max_level= 20, facing: Direction.single = Direction.South) -> None:
         from items import Item
         from _main import Game
 
         self.game: Game= game
         self.type= type
-        self.input= inputs
-        self.output= outputs
+        self.inputs= inputs
+        self.outputs= outputs
         self.locked= False
-        self.connected: dict[str, list[Block]]= {
+        self.connected: dict[str, list[tuple[int, Block]]]= {
             "in": [],
             "out": []
         }
-        self.facing: int= Direction.South
+        """
+        Better typage:
+
+        {
+            "in": (`<input_index>`, Block)[],
+            "out": (`<output_index>`, Block)[]
+        }
+
+        Where:
+            - `<input_index>` is the index of the input connection in the `self.inputs` list
+            - `<output_index>` is the index of the output connection in the `self.outputs` list
+        """
+        
+        self.facing: int= facing
         self.deletable= not decorative
         self.interactable= not decorative
         self.requires_update= not decorative
@@ -115,7 +128,7 @@ class Sorter(Block):
         self.processed_items.append(item)
 
 class FloorBlock(Block):
-    def __init__(self, game, type: str, texture="default_block_texture") -> None:
+    def __init__(self, game, type: str, texture="default_floor_texture") -> None:
         super().__init__(game, type= type, texture= texture, decorative= True)
 
 class EmptyBlock(FloorBlock):

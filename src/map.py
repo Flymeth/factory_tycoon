@@ -84,16 +84,22 @@ class Map:
         """
         actual_block= self.get_block(*coordonates)
         assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
-        # for overflow_x in range(-1, 2):
-        #     for overflow_y in range(-1, 2):
-        #         if overflow_x == overflow_y == 0: continue
-        #         x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
-        #         if 0 <= x <= self.width and 0 <= y <= self.height:
-        #             self.matrice[x][y].connected
-        # ^^^^^^^ Not finished
         if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
             assert isinstance(block.extracts, type(actual_block.ressource)), "Tried to place a generator on an invalid mine"
         self.matrice[coordonates[0]][coordonates[1]]= block
+
+        # Connect block with sided ones
+        # for overflow_x in range(-1, 2):
+        #     for overflow_y in range(-1, 2):
+        #         if bool(overflow_x) != bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
+        #         x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
+        #         if 0 <= x <= self.width and 0 <= y <= self.height:
+        #             side_block= self.matrice[x][y]
+        #             for input_index in range(len(block.inputs)):
+        #                 input_direction= block.inputs[input_index]
+                        
+        #             self.matrice[x][y].connected
+        # ^^^^^^^ Not finished
     def delete(self, coordonates: tuple[int, int]) -> Block:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position
