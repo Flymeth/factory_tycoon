@@ -60,7 +60,7 @@ class Game:
         """
         return self.pygame.app.quit
     
-    # EVENT MANAGERS ---
+    # EVENT MANAGERS
     def add_event(self, ev_name: str, handler: Callable[[Self, pg.event.Event], None]):
         """ Add an handler to an event
             Returns the handler's id
@@ -91,7 +91,6 @@ class Game:
         """
         if not ev_name in self.events: return []
         return [handler(self, ev_data) for _, handler in self.events[ev_name]]
-    # ---
 
 if __name__ == "__main__":
     print(Game.Modules.blocks)

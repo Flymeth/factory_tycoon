@@ -1,5 +1,6 @@
-from blocks import Block, EmptyBlock, Trash
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldGenerator
 from direction_sys import Direction
+from typing import Callable
 
 class Map:
     def __init__(self, game, zoom= 15, init: list[list[Block]]= []) -> None:
@@ -16,6 +17,7 @@ class Map:
         self.game: Game= game
         self.zoom= zoom
         self.matrice= init
+        self.floor= self.create_chuck(self.width, self.height)
         self.center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
         pass
 
@@ -49,8 +51,10 @@ class Map:
                         self.generate_chunks(Direction.East, 1)
                     if dir == Direction.North:
                         self.matrice[index] = chunck[index] + column
+                        self.floor[index] = chunck[index] + self.floor[index]
                     else:
                         self.matrice[index] += chunck[index]
+                        self.floor[index]+= chunck[index]
                 
                 self.center = ( # As we modify all the map's block position, we need to modify the map's center
                     self.center[0], 
@@ -61,12 +65,14 @@ class Map:
 
                 if dir == Direction.East:
                     self.matrice += chunck
+                    self.floor+= chunck
                 else:
                     self.center = ( # As we modify all the map's block position, we need to modify the map's center
                         self.center[0] + size, 
                         self.center[1]
                     )
                     self.matrice = chunck + self.matrice
+                    self.floor= chunck + self.floor
             else: raise AssertionError(f"Invalid chunk direction (received '{dir}')")
 
             generated.append(chunck)
@@ -76,7 +82,8 @@ class Map:
         """ Places a block in the map
             This method crashes if there is another block at this position
         """
-        assert type(self.get_block(*coordonates)) == EmptyBlock, "Tried to place a block above another"
+        actual_block= self.get_block(*coordonates)
+        assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
         # for overflow_x in range(-1, 2):
         #     for overflow_y in range(-1, 2):
         #         if overflow_x == overflow_y == 0: continue
@@ -84,21 +91,23 @@ class Map:
         #         if 0 <= x <= self.width and 0 <= y <= self.height:
         #             self.matrice[x][y].connected
         # ^^^^^^^ Not finished
+        if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
+            assert isinstance(block.extracts, type(actual_block.ressource)), "Tried to place a generator on an invalid mine"
         self.matrice[coordonates[0]][coordonates[1]]= block
     def delete(self, coordonates: tuple[int, int]) -> Block:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position
         """
-        assert type(self.get_block(*coordonates)) != EmptyBlock, "Tried to delete the floor"
+        assert not isinstance(self.get_block(*coordonates), FloorBlock), "Tried to delete the floor"
         x, y= coordonates
         deleted = self.matrice[x][y]
-        self.matrice[x][y]= EmptyBlock(self.game)
+        self.matrice[x][y]= self.floor[x][y]
         return deleted
-    def get_block(self, x = int, y = int):
+    def get_block(self, x = int, y = int) -> Block:
         return self.matrice[x][y]
-    def find_blocks(self, predicate= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
+    def find_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
         return [
-            ((x, y), self.matrice[x][y])
+            ((x, y), self.get_block(x, y))
             for x in range(len(self.matrice))
             for y in range(len(self.matrice[x]))
             if predicate(self.matrice[x][y])
@@ -117,9 +126,13 @@ class Map:
         return len(self.matrice) * len(self.matrice[0])
 
 if __name__ == "__main__":
+    from items import GoldIngot
+
     m= Map(None, init= [[Trash(None)]])
     print(m.center)
     m.generate_chunks(Direction.fast("wn"))
     print(m)
     print(m.center)
     print(m.get_block(*m.center))
+    print(type(MineBlock(None, GoldIngot(None)).ressource), type(GoldGenerator(None).extracts))
+    print(isinstance(MineBlock(None, GoldIngot(None)).ressource, type(GoldGenerator(None).extracts)))

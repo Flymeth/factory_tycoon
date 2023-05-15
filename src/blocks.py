@@ -33,7 +33,7 @@ class Block:
     @property
     def position(self) -> tuple[int, int]:
         found= self.game.map.find_blocks(lambda block: block == self)
-        assert len(found) == 1, "Block isn't in the map or in double"
+        assert len(found) == 1, "Block isn't in the map or has been duplicated"
         return found[0][0]
     def exec(self):
         pass
@@ -41,11 +41,6 @@ class Block:
         pass
     def __str__(self) -> str:
         return self.type[0].upper()
-
-class EmptyBlock(Block):
-    def __init__(self, game) -> None:
-        super().__init__(game, "empty", texture= "empty", decorative= True)
-        pass
 
 class Seller(Block):
     def __init__(self, game, sell_type: list[Item]= []) -> None:
@@ -82,12 +77,12 @@ class Generator(Block):
         
         from items import Cobble
         super().__init__(game, "generator", outputs= Direction.fast("a"), texture= texture)
-        self.ingot = ingot_type
+        self.extracts = ingot_type
         self.others: list[Item]= [Cobble]
         self.spawn_chance= ingot_spawn_chance
     def exec(self):
         self.processing_items.append(
-            (self.ingot if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
+            (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
             (self.game) # Et ici on instancie cette classe
         )
         return super().exec()
@@ -95,17 +90,17 @@ class Generator(Block):
 class DiamondGenerator(Generator):
     def __init__(self, game) -> None:
         from items import DiamondIngot
-        super().__init__(game, ingot_type= DiamondIngot, ingot_spawn_chance=.25, texture= "gold_generator")
+        super().__init__(game, ingot_type= DiamondIngot(game), ingot_spawn_chance=.25, texture= "gold_generator")
     
 class GoldGenerator(Generator):
     def __init__(self, game) -> None:
         from items import GoldIngot
-        super().__init__(game, ingot_type= GoldIngot, texture= "gold_generator")
+        super().__init__(game, ingot_type= GoldIngot(game), texture= "gold_generator")
 
 class IronGenerator(Generator):
     def __init__(self, game) -> None:
         from items import IronIngot
-        super().__init__(game, ingot_type= IronIngot, texture= "iron_generator")
+        super().__init__(game, ingot_type= IronIngot(game), texture= "iron_generator")
 
 class Sorter(Block):
     def __init__(self, game, valid_items: list[Item]= []) -> None:
@@ -118,7 +113,19 @@ class Sorter(Block):
         else:
             self.next_item_output = Direction.fast("e")
         self.processed_items.append(item)
-        
+
+class FloorBlock(Block):
+    def __init__(self, game, type: str, texture="default_block_texture") -> None:
+        super().__init__(game, type= type, texture= texture, decorative= True)
+
+class EmptyBlock(FloorBlock):
+    def __init__(self, game) -> None:
+        super().__init__(game, "empty", "empty")
+        pass
+class MineBlock(FloorBlock):
+    def __init__(self, game, mine_type: Item) -> None:
+        super().__init__(game, "mine", "mine")
+        self.ressource= mine_type
 
 if __name__ == "__main__":
     pass
