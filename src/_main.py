@@ -37,7 +37,11 @@ class Game:
         self.map= map.Map(self, init= [[blocks.GlobalSeller(self)]])
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
-        self.quests= [Q(self) for Q in quests if type(Q) == quests.Quest and Q.__class__ != quests.Quest]
+        self.quests: list[quests.Quest]= []
+        for key in dir(quests):
+            Q= getattr(quests, key)
+            if type(Q) == type(quests.Quest) and Q != quests.Quest:
+                self.quests.insert(0, Q(self))
 
         self.pygame= Pygame(max_fps)
         self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None]]]]= {}

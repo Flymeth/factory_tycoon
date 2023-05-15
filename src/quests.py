@@ -7,10 +7,6 @@ class Quest:
         self.description = description
         self.done= False
         pass
-    def is_compatible(self) -> bool:
-        """ Renvoie si oui ou non (`True` ou `False`) la quête peut être applicable au joueur
-        """
-        return True
     def check_success(self) -> bool:
         """ Renvoie si oui ou non (`True` ou `False`) le joueur a accomplis cette quête
         """
