@@ -12,6 +12,7 @@ class Player:
         self.active_quests= default_quests
         self.achieved_quests: list[Quest]= []
         self.inventory: list[Block] = []
+        self.selled: list[Item]= []
         pass
     def gain(self, amount: float) -> float:
         self.credits+= amount

@@ -26,5 +26,13 @@ class FirstSelledItem(Quest):
     def __init__(self, game) -> None:
         super().__init__(game, "Your first quest", "Sell an item with the help of a query and a seller.")
     def check_success(self) -> bool:
-        
-        return super().check_success()
+        return len(self.game.player.selled) > 0
+    def give_reward(self) -> None:
+        return self.game.player.gain(100)
+class Achieve150Credits(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "Making money", "Achieve 150 credits.")
+    def check_success(self) -> bool:
+        return self.game.player.credits > 150
+    def give_reward(self) -> None:
+        return self.game.player.gain(100)

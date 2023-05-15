@@ -47,13 +47,6 @@ class EmptyBlock(Block):
         super().__init__(game, "empty", texture= "empty", decorative= True)
         pass
 
-class GlobalSeller(Block):
-    def __init__(self, game) -> None:
-        super().__init__(game, "global_seller", inputs= Direction.fast("a"), texture= "global_seller", max_level= 1)
-        pass
-    def exec(self):
-        item= self.processing_items.pop(0)
-        self.game.player.sell(item)
 class Seller(Block):
     def __init__(self, game, sell_type: list[Item]= []) -> None:
         super().__init__(game, "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1)
@@ -62,12 +55,20 @@ class Seller(Block):
         if self.requires_maintenance: return
 
         item = self.processed_items[0] # Pas de pop() car si l'item est invalide on le laisse dans la machine
-        if item in self.accept:
+        if not self.accept or item in self.accept:
             self.processed_items.pop(0)
+            self.game.player.selled.append(item)
+            
             item_value= item.value * (self.game.marked.courts.get(item.name) or 1)
             self.game.player.gain(item_value)
         else:
             self.requires_maintenance= True
+class GlobalSeller(Seller):
+    def __init__(self, game) -> None:
+        super().__init__(game)
+        self.type= "global_seller"
+        self.texture= "global_seller"
+        pass
 
 class Trash(Block):
     def __init__(self, game) -> None:

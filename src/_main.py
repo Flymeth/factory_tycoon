@@ -37,6 +37,7 @@ class Game:
         self.map= map.Map(self, init= [[blocks.GlobalSeller(self)]])
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
+        self.quests= [Q(self) for Q in quests if type(Q) == quests.Quest and Q.__class__ != quests.Quest]
 
         self.pygame= Pygame(max_fps)
         self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None]]]]= {}
@@ -106,3 +107,5 @@ if __name__ == "__main__":
     print(g.events)
     g.rmv_event("test")
     print(g.events)
+
+    print(g.quests)
