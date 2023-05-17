@@ -1,6 +1,7 @@
 from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldGenerator, Sorter
 from direction_sys import Direction
 from typing import Callable
+from copy import deepcopy
 
 class Map:
     def __init__(self, game, init: list[list[Block]]= []) -> None:
@@ -8,13 +9,28 @@ class Map:
 
         self.game: Game= game
         self.matrice= init
-        self.floor= self.create_chuck(self.width, self.height)
-        self.center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
+        self.__center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
         pass
 
     @staticmethod
-    def create_coordonates(x = int, y = int):
+    def create_coordonates(x: int, y: int):
         return x, y
+    def __generic_coordonates_to_matrice_coordonate__(self, x: int, y: int):
+        """ [PRIVATE METHOD]-> Transform coordonates to the map's matrice corresponding block index in x and y
+                Note:
+                    Generic coordonates corespond as the coordonates as:
+                        (0, 0) corresponds to the map's center
+                    > See [README.md]
+        """
+        return self.__center[0] - x, self.__center[1] - y
+    def __matrice_coordonates_to_generic_coordonate__(self, x: int, y: int):
+        """ [PRIVATE METHOD]-> Transform matrice block index in x and y to coorsponding coordonates on the map
+                Note:
+                    Matrice coordonates corespond as the coordonates as:
+                        (0, 0) corresponds to the map's top left
+                    > See [README.md]
+        """
+        return x - self.__center[0], y - self.__center[1]
     @property
     def width(self):
         return len(self.matrice or [])
@@ -32,35 +48,29 @@ class Map:
 
         generated= []
         for dir in Direction.listify(direction):
-            if dir == Direction.North or dir == Direction.South:
+            if dir in (Direction.North, Direction.South):
                 chunck= self.create_chuck(self.width, size)
-                for index, column in enumerate(self.matrice):
-                    if index > self.width:
-                        self.generate_chunks(Direction.East, 1)
+
+                for index in range(self.width):
                     if dir == Direction.North:
-                        self.matrice[index] = chunck[index] + column
-                        self.floor[index] = chunck[index] + self.floor[index]
+                        self.__center = ( # As we modify all the map's block position, we need to modify the map's center
+                            self.__center[0], 
+                            self.__center[1] + size
+                        )
+                        self.matrice[index] = chunck[index] + self.matrice[index]
                     else:
                         self.matrice[index] += chunck[index]
-                        self.floor[index]+= chunck[index]
-                
-                self.center = ( # As we modify all the map's block position, we need to modify the map's center
-                    self.center[0], 
-                    self.center[1] + size
-                )
-            elif dir == Direction.East or dir == Direction.West:
+            elif dir in (Direction.East, Direction.West):
                 chunck= self.create_chuck(size, self.height)
 
                 if dir == Direction.East:
                     self.matrice += chunck
-                    self.floor+= chunck
                 else:
-                    self.center = ( # As we modify all the map's block position, we need to modify the map's center
-                        self.center[0] + size, 
-                        self.center[1]
+                    self.__center = ( # As we modify all the map's block position, we need to modify the map's center
+                        self.__center[0] + size, 
+                        self.__center[1]
                     )
                     self.matrice = chunck + self.matrice
-                    self.floor= chunck + self.floor
             else: raise AssertionError(f"Invalid chunk direction (received '{dir}')")
 
             generated.append(chunck)
@@ -69,12 +79,19 @@ class Map:
     def place(self, block: Block, coordonates: tuple[int, int]):
         """ Places a block in the map
             This method crashes if there is another block at this position
+
+            Note:
+                coordonates -> The generic coordonates
         """
-        actual_block= self.get_block(*coordonates)
+        x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
+        assert 0 <= x < self.width and 0 <= y < self.height, "The map has not been generated here (cannot place the block)"
+
+        actual_block= self.matrice[x][y]
         assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
         if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
             assert isinstance(block.extracts, type(actual_block.ressource)), "Tried to place a generator on an invalid mine"
-        self.matrice[coordonates[0]][coordonates[1]]= block
+        block.block_bellow= actual_block
+        self.matrice[x][y]= block
 
         # Connect block with sided ones #
         for overflow_x in range(-1, 2):
@@ -82,7 +99,7 @@ class Map:
                 if bool(overflow_x) == bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
                 x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
                 if 0 <= x <= self.width and 0 <= y <= self.height:
-                    side_block= self.get_block(x, y)
+                    side_block= self.matrice[x][y]
                     if isinstance(side_block, FloorBlock): continue
 
                     # Sided_block connection side (without any rotation)
@@ -143,21 +160,36 @@ class Map:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position
         """
-        assert not isinstance(self.get_block(*coordonates), FloorBlock), "Tried to delete the floor"
+        coordonates= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
+        assert not isinstance(self.matrice[coordonates[0]][coordonates[1]], FloorBlock), "Tried to delete the floor"
         x, y= coordonates
         deleted = self.matrice[x][y]
-        self.matrice[x][y]= self.floor[x][y]
+        # Remove connections
+        for connection_in, block in deleted.connected["in"]:
+            if block == deleted:
+                connection_out= (connection_in+2) %4
+                block.connected["out"].remove((connection_out, deleted))
+        for connection_out, block in deleted.connected["out"]:
+            if block == deleted:
+                connection_in= (connection_in+2) %4
+                block.connected["in"].remove((connection_in, deleted))
+        # --------------------------------------------------------------
+        assert deleted.block_bellow, "Error: cannot replace the block because it doesn't have a bellow_block in stockage" # Normalement ce assert ne sert à rien, mais ne pas l'enlever
+        self.matrice[x][y]= deleted.block_bellow
         return deleted
-    def get_block(self, x = int, y = int) -> Block:
+    def get_block(self, x: int, y: int) -> Block:
+        x, y= self.__generic_coordonates_to_matrice_coordonate__(x, y)
         return self.matrice[x][y]
     def find_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
         return [
-            ((x, y), self.get_block(x, y))
+            (self.__matrice_coordonates_to_generic_coordonate__(x, y), self.matrice[x][y])
             for x in range(len(self.matrice))
             for y in range(len(self.matrice[x]))
             if predicate(self.matrice[x][y])
         ]
 
+    def flatten(self) -> list[Block]:
+        return [self.matrice[x][y] for x in range(self.width) for y in range(self.height)]
     def __str__(self) -> str:
         reversed_map: list[list[Block]]= []
         for column in self.matrice:
@@ -174,16 +206,11 @@ if __name__ == "__main__":
     from items import GoldIngot
 
     m= Map(None, init= [[Trash(None)]])
-    print(m.center)
-    m.generate_chunks(Direction.fast("wn"))
+    m.generate_chunks(Direction.fast("es"), 5)
     print(m)
-    print(m.center)
-    print(m.get_block(*m.center))
-    print(type(MineBlock(None, GoldIngot(None)).ressource), type(GoldGenerator(None).extracts))
-    print(isinstance(MineBlock(None, GoldIngot(None)).ressource, type(GoldGenerator(None).extracts)))
 
-    my_trash= Trash(None)
-    my_sorter= Sorter(None)
-    m.place(my_trash, Map.create_coordonates(5, 5))
-    m.place(my_sorter, Map.create_coordonates(5, 4))
+    # my_trash= Trash(None)
+    # my_sorter= Sorter(None)
+    # m.place(my_trash, Map.create_coordonates(5, 5))
+    # m.place(my_sorter, Map.create_coordonates(5, 4))
     pass

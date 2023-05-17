@@ -1,6 +1,8 @@
 from direction_sys import Direction
 from items import Item
 from random import random, choice
+from textures import get_texture
+from pygame import transform
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "default_block_texture", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
@@ -41,17 +43,29 @@ class Block:
         self.requires_maintenance= False
         self.processing_items: list[Item] = []
         self.processed_items: list[Item] = []
-        self.next_item_output: Direction.identifierof = Direction.fast("a") # Si la sortie du prochain item doit être choisie, sinon cela prendre une sortie au hazard parmis la liste des sorties
+        self.next_item_output: Direction.typeof = Direction.fast("a") # Si la sortie du prochain item doit être choisie, sinon cela prendre une sortie au hazard parmis la liste des sorties
+        self.block_bellow: Block | None= None
         pass
     @property
     def position(self) -> tuple[int, int]:
-        assert self.game, "Game object has not been set"
+        """ Returns the block position in the map matrice
+        """
+        assert self.game, "Cannot calculate position without the game object"
         found= self.game.map.find_blocks(lambda block: block == self)
-        assert len(found) == 1, "Block isn't in the map or has been duplicated"
+        assert len(found) == 1, "Block isn't in the map or has been added twice"
         return found[0][0]
-    def exec(self):
-        pass
-    def draw(self):
+    def exec(self):pass
+    def draw(self, g= None):
+        assert self.game, "Cannot draw block without the game object"
+        angle= self.right_rotations * 90
+        texture= transform.scale(
+            transform.rotate(get_texture("blocks", self.texture), angle),
+            [self.game.cam.zoom] *2
+        )
+        x, y= self.game.cam.get_screen_position(self.position)
+        if self.texture == "global_seller":
+            print(x, y)
+        self.game.pygame.screen.blit(texture, (x, y))
         pass
     def __str__(self) -> str:
         return self.identifier[0].upper()
@@ -92,7 +106,7 @@ class Generator(Block):
         from items import Cobble
         super().__init__(game, "generator", outputs= Direction.fast("a"), texture= texture)
         self.extracts = ingot_type
-        self.others: list[Item]= [Cobble]
+        self.others: list[type[Item]]= [Cobble]
         self.spawn_chance= ingot_spawn_chance
     def exec(self):
         self.processing_items.append(

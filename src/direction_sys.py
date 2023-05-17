@@ -44,7 +44,7 @@ class Direction:
         """
         if not direction: return []
         dir_len= len(direction)
-        combinable= not (direction in "avhx")
+        combinable= not [letter for letter in direction if letter in "avhx"]
         assert 0 < dir_len <= 4, "Direction input must have between 1 and 4 letters"
         assert combinable or dir_len == 1, "Incombinable letter has been combined"
         if combinable:
