@@ -32,4 +32,5 @@
 
 > main project
 
+* faire en sorte que les blocks s'affichent correctement
 * **se laver**

@@ -1,7 +1,6 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldGenerator, Sorter
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
 from direction_sys import Direction
 from typing import Callable
-from copy import deepcopy
 
 class Map:
     def __init__(self, game, init: list[list[Block]]= []) -> None:

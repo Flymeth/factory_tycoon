@@ -11,16 +11,14 @@ The only exeption is inside the Map object: the map's matrice requires the coord
 
 #### **ABSOLUTE COORDONATES**
 
->||<
----|---|---
 (0, 0)|(0, 1)|(0, 2)
+---|---|---
 (1, 0)|(1, 1)|(1, 2)
 (2, 0)|(2, 1)|(2, 2)
 
 #### **RELATIVE COORDONATES (*Used by all functions*)**
 
->||<
----|---|---
 (-1, 1)|(0, 1)|(1, 1)
+---|---|---
 (-1, 0)|(0, 0)|(1, 0)
 (-1, -1)|(0, -1)|(1, -1)
