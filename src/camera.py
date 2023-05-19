@@ -1,6 +1,6 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event
 class Camera():
-    def __init__(self, game, position: list[float, float]= [0, 0], zoom: float= 128, blocks_gap= .15) -> None:
+    def __init__(self, game, position: list[float, float]= [0, 0], zoom: float= 128, blocks_gap= 0) -> None:
         """            
             Zoom
                 Le zoom correspond à la largeur des cases/blocks (en px)

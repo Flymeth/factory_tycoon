@@ -146,7 +146,7 @@ class FloorBlock(Block):
 
 class EmptyBlock(FloorBlock):
     def __init__(self, game) -> None:
-        super().__init__(game, "empty", "empty")
+        super().__init__(game, identifier="empty", texture="empty")
         pass
 class MineBlock(FloorBlock):
     def __init__(self, game, mine_type: Item) -> None:
