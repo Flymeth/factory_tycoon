@@ -55,7 +55,7 @@ class Block:
         assert len(found) == 1, "Block isn't in the map or has been added twice"
         return found[0][0]
     def exec(self):pass
-    def draw(self, g= None):
+    def draw(self):
         assert self.game, "Cannot draw block without the game object"
         angle= self.right_rotations * 90
         texture= transform.scale(
@@ -63,8 +63,6 @@ class Block:
             [self.game.cam.zoom] *2
         )
         x, y= self.game.cam.get_screen_position(self.position)
-        if self.texture == "global_seller":
-            print(x, y)
         self.game.pygame.screen.blit(texture, (x, y))
         pass
     def __str__(self) -> str:

@@ -26,11 +26,12 @@
 
 > camera.py
 
-* faire la méthode draw
+* faire en sorte que la map se génère dès que la caméra va au delà des chunks chargés
 
 ## Other
 
 > main project
 
-* faire en sorte que les blocks s'affichent correctement
+* Faire les icons des blocks
+* Faire l'icon du jeu
 * **se laver**

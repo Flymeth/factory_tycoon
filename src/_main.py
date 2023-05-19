@@ -9,6 +9,9 @@ from uuid import uuid1, UUID
 from typing import Callable, Self, Any
 import pygame as pg
 from camera import Camera
+from textures import create_surface
+
+DEV_MODE= True
 
 class Modules:
     blocks= blocks
@@ -22,9 +25,11 @@ class Pygame():
     def __init__(self, fps: int) -> None:
         pg.init()
         self.fps= fps
-
-        self.screen = pg.display.set_mode(size= (750, 200))
+        window_size= pg.display.get_desktop_sizes()[0]
+        self.screen = pg.display.set_mode(size= [size /2 for size in window_size],flags= 0 if DEV_MODE else pg.FULLSCREEN)
         pg.display.flip()
+        pg.display.set_caption(f"Factory Tycoon ({'DEVELOPMENT MODE' if DEV_MODE else 'RELEASE MODE'})")
+        pg.display.set_icon(create_surface("src/assets/icon.png"))
         self.clock = pg.time.Clock()
         self.app = pg
         self.dt = 0
@@ -35,37 +40,39 @@ class Pygame():
 class Game:
     Modules= Modules
     def __init__(self, player_name: str, max_fps= 60) -> None:
-        self.map= map.Map(self, init= [[blocks.GlobalSeller(self)]])
-        self.cam= Camera(self)
-        self.player= player.Player(self, player_name)
-        self.marked= market.Market(self)
+        self.pygame= Pygame(max_fps)
+        self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None], bool]]]= {}
+        self.running= True
+        self.DEV_MODE= DEV_MODE
         self.quests: list[quests.Quest]= []
         for key in dir(quests):
             Q= getattr(quests, key)
             if type(Q) == type(quests.Quest) and Q != quests.Quest:
                 self.quests.insert(0, Q(self))
-
-        self.pygame= Pygame(max_fps)
-        self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None], bool]]]= {}
-        self.running= True
+        self.map= map.Map(self, init= [[blocks.GlobalSeller(self)]])
+        self.cam= Camera(self)
+        self.player= player.Player(self, player_name)
+        self.marked= market.Market(self)
         pass
     def start(self):
         """ Starts the game
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
         while 1:
-            for event in self.pygame.app.event.get():
-                self.fire_event(event.type, event)
-            if not self.running: break
-            
             self.cam.draw()
             pg.display.update()
             self.pygame.next_tick()
+
+            for event in self.pygame.app.event.get():
+                self.fire_event(event.type, event)
+            self.fire_event("tick", pg.event.Event(-1, {"dt": self.pygame.dt}))
+            if not self.running: break
     def quit(self):
         """ Quits and close the game
         """
         self.running= False
-        return self.pygame.app.quit()
+        self.pygame.app.quit()
+        return exit(0)
     
     # EVENT MANAGERS
     def add_event(self, ev_identifier: Any, handler: Callable[[Self, pg.event.Event], None], once= False):
@@ -119,7 +126,7 @@ if __name__ == "__main__":
     g.map.generate_chunks(Direction.fast("a"), 5)
 
     my_seller= blocks.GlobalSeller(g)
-    g.map.place(my_seller, (0, 2))
+    g.map.place(my_seller, (0, 1))
     print("MAP BEFORE START:\n", str(g.map))
     print(g.map.get_block(0, 0))
     g.start()
