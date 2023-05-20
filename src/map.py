@@ -1,14 +1,39 @@
 from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
 from direction_sys import Direction
+from pygame.display import get_window_size
 from typing import Callable
 
 class Map:
-    def __init__(self, game, init: list[list[Block]]= []) -> None:
+    def __init__(self, game, init: list[list[Block]]= [], auto_generate_chunks= True) -> None:
         from _main import Game
 
         self.game: Game= game
         self.matrice= init
         self.__center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
+        if auto_generate_chunks:
+            self.game.add_event("tick", lambda g, e: self.check_and_generate_chunks())
+        pass
+    def check_and_generate_chunks(self):
+        extremities= {
+            "tl": self.matrice[0][0],
+            "tr": self.matrice[-1][0],
+            "bl": self.matrice[0][-1],
+            "br": self.matrice[-1][-1]
+        }
+        generate_direction= Direction.fast("x")
+        width, height= get_window_size()
+        for key in extremities:
+            x, y= self.game.cam.get_screen_position(extremities[key].coordonates)
+            if "t" in key and y > -self.game.cam.zoom:
+                generate_direction+= Direction.fast("n")
+            if "b" in key and y < height:
+                generate_direction+= Direction.fast("s")
+            if "l" in key and x > -self.game.cam.zoom:
+                generate_direction+= Direction.fast("w")
+            if "r" in key and x < width:
+                generate_direction+= Direction.fast("e")
+        generate_direction= list(set(generate_direction))
+        self.generate_chunks(generate_direction, 1)
         pass
 
     @staticmethod

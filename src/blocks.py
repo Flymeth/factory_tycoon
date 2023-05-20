@@ -2,7 +2,8 @@ from direction_sys import Direction
 from items import Item
 from random import random, choice
 from textures import get_texture
-from pygame import transform
+from pygame import transform, display
+from font import TEXT_FONT, TITLE_FONT
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "default_block_texture", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
@@ -47,8 +48,8 @@ class Block:
         self.block_bellow: Block | None= None
         pass
     @property
-    def position(self) -> tuple[int, int]:
-        """ Returns the block position in the map matrice
+    def coordonates(self) -> tuple[int, int]:
+        """ Returns the block coordonates
         """
         assert self.game, "Cannot calculate position without the game object"
         found= self.game.map.find_blocks(lambda block: block == self)
@@ -56,15 +57,25 @@ class Block:
         return found[0][0]
     def exec(self):pass
     def draw(self):
+        """ Tries to draw the block and returns if False if the block has not been drawed, else returns True
+        """
         assert self.game, "Cannot draw block without the game object"
+        x, y= self.game.cam.get_screen_position(self.coordonates)
+        width, height= display.get_window_size()
+        if not (
+            -self.game.cam.zoom <= x <= width
+            and -self.game.cam.zoom <= y <= height
+        ): return False
+
         angle= self.right_rotations * 90
         texture= transform.scale(
             transform.rotate(get_texture("blocks", self.texture), angle),
-            [self.game.cam.zoom] *2
+            [self.game.cam.zoom]*2
         )
-        x, y= self.game.cam.get_screen_position(self.position)
         self.game.pygame.screen.blit(texture, (x, y))
-        pass
+        if self.game.DEV_MODE:
+            TITLE_FONT.render_to(self.game.pygame.screen, (x, y), f"{x}, {y}", (0, 0, 0), size=7.5)
+        return True
     def __str__(self) -> str:
         return self.identifier[0].upper()
 

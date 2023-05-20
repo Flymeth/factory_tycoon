@@ -15,6 +15,7 @@
 > map.py
 
 * faire la méthode create_chuck
+* lorsque le chunk se génère dans la direction `nord`, la caméra fait nimp
 
 ## Market
 
@@ -26,7 +27,7 @@
 
 > camera.py
 
-* faire en sorte que la map se génère dès que la caméra va au delà des chunks chargés
+* faire la méthode `get_cursor_coordonates`
 
 ## Other
 

@@ -26,7 +26,8 @@ class Pygame():
         pg.init()
         self.fps= fps
         window_size= pg.display.get_desktop_sizes()[0]
-        self.screen = pg.display.set_mode(size= [size /2 for size in window_size],flags= 0 if DEV_MODE else pg.FULLSCREEN)
+        self.screen = pg.display.set_mode(size= [size /2 for size in window_size],flags= pg.DOUBLEBUF | (0 if DEV_MODE else pg.FULLSCREEN))
+        self.screen.set_alpha(None)
         pg.display.flip()
         pg.display.set_caption(f"Factory Tycoon ({'DEVELOPMENT MODE' if DEV_MODE else 'RELEASE MODE'})")
         pg.display.set_icon(create_surface("src/assets/icon.png"))
@@ -39,7 +40,7 @@ class Pygame():
 
 class Game:
     Modules= Modules
-    def __init__(self, player_name: str, max_fps= 60) -> None:
+    def __init__(self, player_name: str, max_fps= 144) -> None:
         self.pygame= Pygame(max_fps)
         self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None], bool]]]= {}
         self.running= True
@@ -53,6 +54,7 @@ class Game:
         self.cam= Camera(self)
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
+        self.require_drawing= []
         pass
     def start(self):
         """ Starts the game
@@ -61,12 +63,13 @@ class Game:
         while 1:
             self.cam.draw()
             pg.display.update()
-            self.pygame.next_tick()
 
             for event in self.pygame.app.event.get():
                 self.fire_event(event.type, event)
             self.fire_event("tick", pg.event.Event(-1, {"dt": self.pygame.dt}))
             if not self.running: break
+
+            self.pygame.next_tick()
     def quit(self):
         """ Quits and close the game
         """

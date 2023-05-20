@@ -2,6 +2,10 @@
 
 A python game where you need to manage a hole factory as a tycoon manager.
 
+## Dependencies
+
+- Pygame
+
 ## Notes about the code
 
 ### Coordonates
