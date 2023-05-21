@@ -55,7 +55,6 @@ class Block:
         found= self.game.map.find_blocks(lambda block: block == self)
         assert len(found) == 1, "Block isn't in the map or has been added twice"
         return found[0][0]
-    def exec(self):pass
     def draw(self):
         """ Tries to draw the block and returns if False if the block has not been drawed, else returns True
         """
@@ -73,9 +72,8 @@ class Block:
             [self.game.cam.zoom]*2
         )
         self.game.pygame.screen.blit(texture, (x, y))
-        if self.game.DEV_MODE:
-            TITLE_FONT.render_to(self.game.pygame.screen, (x, y), f"{x}, {y}", (0, 0, 0), size=7.5)
         return True
+    def exec(self):pass
     def __str__(self) -> str:
         return self.identifier[0].upper()
 

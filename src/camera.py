@@ -3,6 +3,8 @@ from font import TEXT_FONT
 
 ZOOM_SPEED: int= 5
 MOVING_BUTTON_ID: int= 2 # 2 = wheel_button
+signof= lambda x: (x < -1) * -2 + 1 # = the sign of the argument
+
 class Camera():
     def __init__(self, game, position: list[float, float]= [0, 0], zoom: float= 100) -> None:
         """            
@@ -46,37 +48,71 @@ class Camera():
         self.zoom= min(200, max(20, self.zoom + wheeling_y * ZOOM_SPEED))
         pass
     def get_screen_position(self, coordonates: tuple[int, int]):
-        screen_size= self.game.pygame.screen.get_size()
-        return [
-            (coordonates[i] - self.position[i]/100 - 1) * self.zoom 
-            + (screen_size[i] + self.zoom)/2
+        """ Returns the x & y position of the block in the screen where x and y is the top of the block
+        """
+        screen_size= display.get_window_size()
+        coordonates= coordonates[0], coordonates[1]*-1 # Because for the screen, go upper means to decrease the y axis
+        x, y= [
+            (coordonates[i] - self.position[i]/100) * self.zoom
+            + (screen_size[i] - self.zoom)/2
             for i in range(2)
         ]
+        return x, y
     def get_screen_center_coordonates(self):
-        signof= lambda x: (x < -1) * -2 + 1 # = the sign of the argument
+        position = [
+            pos / 100 * self.zoom
+            for pos in self.position
+        ]
 
-        return [
-            -int((
-                self.position[i]
-                + self.zoom
-                / 2 * signof(self.position[i])
+        x, y = [
+            int((
+                position[i]
+                + self.zoom/2 * signof(position[i])
             )/ self.zoom) # It works, but idk how
             for i in range(2)
         ]
+        return x, -y
     def get_cursor_coordonates(self):
         mouse_pos= mouse.get_pos()
         screen_size = display.get_window_size()
-        x, y = [(mouse_pos[i]/screen_size[i])*2 -1 for i in range(2)]
-        print(x, y)
-        pass
+        centered_mouse_position= [
+            mouse_pos[i] - screen_size[i]/2
+            for i in range(2)
+        ]
+        position = [
+            pos / 100 * self.zoom
+            for pos in self.position
+        ]
+
+        x, y = [
+            int((
+                centered_mouse_position[i] + position[i]
+                + self.zoom/2 * signof(centered_mouse_position[i] + position[i])
+            ) /self.zoom) # same as above: it works, but idk how
+            for i in range(2)
+        ]
+        return x, -y
     def draw(self):
         self.game.pygame.screen.fill(colordict.THECOLORS["purple"])
-        self.get_cursor_coordonates()
+        center_x, center_y= self.get_screen_center_coordonates()
         drawed= 0
-        for block in self.game.map.flatten():
-            if block.draw(): drawed+= 1
+
+        def draw_block(x: int, y: int):
+            block = self.game.map.get_block(x, y)
+            return block.draw() if block else None
+        for x_coef in (-1, 0, 1):
+            x = center_x + x_coef
+            while draw_block(x, center_y): # While the block in the x axis can be drawed
+                drawed+= 1
+                for y_coef in (-1, 1):
+                    y = center_y + y_coef
+                    while draw_block(x, y): # While the block in the y axis can be drawed
+                        drawed+= 1
+                        y+= y_coef # Move to the next block (verticaly)
+                
+                if not x_coef: break
+                x+= x_coef # Move to the next block (horizontaly)
         if self.game.DEV_MODE:
-            TEXT_FONT.render_to(self.game.pygame.screen, (10, 10), f"Camera position: {self.position}", (0, 0, 0))
-            TEXT_FONT.render_to(self.game.pygame.screen, (10, 30), f"FPS: {round(self.game.pygame.clock.get_fps(), 3)}", (0, 0, 0))
-            TEXT_FONT.render_to(self.game.pygame.screen, (10, 40), f"Drawed blocks: {drawed}", (0, 0, 0))
-            TEXT_FONT.render_to(self.game.pygame.screen, self.screen_center, f"\\", (0, 0, 0), size=0)
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (0, 0, 0))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (0, 0, 0))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 35), f"POINTED COORDONATES: {self.get_cursor_coordonates()}", (0, 0, 0))

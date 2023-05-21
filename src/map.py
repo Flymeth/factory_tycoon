@@ -4,12 +4,12 @@ from pygame.display import get_window_size
 from typing import Callable
 
 class Map:
-    def __init__(self, game, init: list[list[Block]]= [], auto_generate_chunks= True) -> None:
+    def __init__(self, game, auto_generate_chunks= True) -> None:
         from _main import Game
 
         self.game: Game= game
-        self.matrice= init
-        self.__center= (self.width//2, self.height//2) # Les coordonnées du centre du monde
+        self.matrice= [[]]
+        self.__center= 0, 0 # Les coordonnées du centre du monde
         if auto_generate_chunks:
             self.game.add_event("tick", lambda g, e: self.check_and_generate_chunks())
         pass
@@ -20,41 +20,54 @@ class Map:
             "bl": self.matrice[0][-1],
             "br": self.matrice[-1][-1]
         }
-        generate_direction= Direction.fast("x")
+        generate_directions= Direction.fast("x")
         width, height= get_window_size()
+        block_size = self.game.cam.zoom
         for key in extremities:
             x, y= self.game.cam.get_screen_position(extremities[key].coordonates)
-            if "t" in key and y > -self.game.cam.zoom:
-                generate_direction+= Direction.fast("n")
-            if "b" in key and y < height:
-                generate_direction+= Direction.fast("s")
-            if "l" in key and x > -self.game.cam.zoom:
-                generate_direction+= Direction.fast("w")
-            if "r" in key and x < width:
-                generate_direction+= Direction.fast("e")
-        generate_direction= list(set(generate_direction))
-        self.generate_chunks(generate_direction, 1)
-        pass
-
+            if "t" in key and y >= 0:
+                generate_directions+= Direction.fast("n")
+                print("> AUTO GENERATING IN NORTH DIRECTION...")
+            if "b" in key and y + block_size <= height:
+                generate_directions+= Direction.fast("s")
+                print("> AUTO GENERATING IN SOUTH DIRECTION...")
+            if "l" in key and x >= 0:
+                generate_directions+= Direction.fast("w")
+                print("> AUTO GENERATING IN WEST DIRECTION...")
+            if "r" in key and x + block_size <= width:
+                generate_directions+= Direction.fast("e")
+                print("> AUTO GENERATING IN EAST DIRECTION...")
+        if generate_directions:
+            self.generate_chunks(
+                list(set(generate_directions)), # To avoid duplicates
+                1 # Number of blocks to generate
+            )
+            print("> GENERATION COMPLETED.")
     @staticmethod
     def create_coordonates(x: int, y: int):
+        assert type(x) == type(y) == int, "Coordonates must be of type `int`"
         return x, y
     def __generic_coordonates_to_matrice_coordonate__(self, x: int, y: int):
         """ [PRIVATE METHOD]-> Transform coordonates to the map's matrice corresponding block index in x and y
                 Note:
-                    Generic coordonates corespond as the coordonates as:
+                    Generic coordonates corespond as the coordonates where:
                         (0, 0) corresponds to the map's center
                     > See [README.md]
         """
-        return self.__center[0] - x, self.__center[1] - y
+        assert type(x) == type(y) == int, "Coordonates must be of type `int`"
+        x, y = self.__center[0] - x, self.__center[1] - y
+        assert 0 <= x < self.width and 0 <= y < self.height, "Map has not been generated at this coordonates"
+        return x, y
+
     def __matrice_coordonates_to_generic_coordonate__(self, x: int, y: int):
-        """ [PRIVATE METHOD]-> Transform matrice block index in x and y to coorsponding coordonates on the map
+        """ [PRIVATE METHOD]-> Transform matrice block index in x and y to corresponding coordonates on the map
                 Note:
-                    Matrice coordonates corespond as the coordonates as:
-                        (0, 0) corresponds to the map's top left
+                    Matrice coordonates corespond as the coordonates where:
+                        (0, 0) corresponds to the top left of the map
                     > See [README.md]
         """
-        return x - self.__center[0], y - self.__center[1]
+        assert type(x) == type(y) == int, "Coordonates must be of type `int`"
+        return self.__center[0] - x, self.__center[1] - y
     @property
     def width(self):
         return len(self.matrice or [])
@@ -108,7 +121,6 @@ class Map:
                 coordonates -> The generic coordonates
         """
         x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
-        assert 0 <= x < self.width and 0 <= y < self.height, "The map has not been generated here (cannot place the block)"
 
         actual_block= self.matrice[x][y]
         assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
@@ -184,9 +196,8 @@ class Map:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position
         """
-        coordonates= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
-        assert not isinstance(self.matrice[coordonates[0]][coordonates[1]], FloorBlock), "Tried to delete the floor"
-        x, y= coordonates
+        x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
+        assert not isinstance(self.matrice[x][y], FloorBlock), "Tried to delete the floor"
         deleted = self.matrice[x][y]
         # Remove connections
         for connection_in, block in deleted.connected["in"]:
@@ -201,8 +212,11 @@ class Map:
         assert deleted.block_bellow, "Error: cannot replace the block because it doesn't have a bellow_block in stockage" # Normalement ce assert ne sert à rien, mais ne pas l'enlever
         self.matrice[x][y]= deleted.block_bellow
         return deleted
-    def get_block(self, x: int, y: int) -> Block:
-        x, y= self.__generic_coordonates_to_matrice_coordonate__(x, y)
+    def get_block(self, x: int, y: int) -> Block | None:
+        try:
+            x, y= self.__generic_coordonates_to_matrice_coordonate__(x, y)
+        except AssertionError:
+            return None
         return self.matrice[x][y]
     def find_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
         return [
@@ -229,9 +243,9 @@ class Map:
 if __name__ == "__main__":
     from items import GoldIngot
 
-    m= Map(None, init= [[Trash(None)]])
-    m.generate_chunks(Direction.fast("es"), 5)
-    print(m)
+    m= Map(None, False)
+    m.generate_chunks(Direction.fast("a"), 5)
+    print(m.find_blocks(lambda block: block == m.get_block(-4, -2)))
 
     # my_trash= Trash(None)
     # my_sorter= Sorter(None)
