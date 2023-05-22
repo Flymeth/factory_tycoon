@@ -30,22 +30,19 @@ class Map:
             # Some code samples bellow are not logic, but it works, so fuck it :)
             if "t" in key and y >= 0:
                 generate_directions+= Direction.fast("n")
-                print("> AUTO GENERATING IN NORTH DIRECTION...")
             if "b" in key and y + block_size <= height:
                 generate_directions+= Direction.fast("s")
-                print("> AUTO GENERATING IN SOUTH DIRECTION...")
             if "r" in key and x >= 0:
                 generate_directions+= Direction.fast("e")
-                print("> AUTO GENERATING IN WEST DIRECTION...")
             if "l" in key and x + block_size <= width:
                 generate_directions+= Direction.fast("w")
-                print("> AUTO GENERATING IN EAST DIRECTION...")
         if generate_directions:
             self.generate_chunks(
                 list(set(generate_directions)), # To avoid duplicates
                 1 # Number of blocks to generate
             )
-            print("> GENERATION COMPLETED.")
+            if self.game.DEV_MODE:
+                print(f"> AUTOMATICALLY GENERATED TERRAIN (Directions: {generate_directions}).")
     @staticmethod
     def create_coordonates(x: int, y: int):
         assert type(x) == type(y) == int, "Coordonates must be of type `int`"

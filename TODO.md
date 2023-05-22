@@ -32,4 +32,5 @@
 
 * Faire les icons des blocks
 * Faire l'icon du jeu
+* Faire de l'optimisation
 * **se laver**

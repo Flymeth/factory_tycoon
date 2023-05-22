@@ -6,7 +6,7 @@ from pygame import transform, display
 from font import TEXT_FONT, TITLE_FONT
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "default_block_texture", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "no_texture", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
         from items import Item
         from _main import Game
 
@@ -102,7 +102,7 @@ class GlobalSeller(Seller):
 
 class Trash(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier= "trash",  inputs= Direction.fast("a"))
+        super().__init__(game, identifier= "trash", texture= "trash",  inputs= Direction.fast("a"))
     def exec(self):
         self.processing_items= []
 
@@ -139,7 +139,7 @@ class IronGenerator(Generator):
 
 class Sorter(Block):
     def __init__(self, game, valid_items: list[Item]= []) -> None:
-        super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
+        super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), max_level= 5)
         self.valid= valid_items
     def exec(self):
         item = self.processing_items.pop(0)

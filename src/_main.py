@@ -11,7 +11,7 @@ import pygame as pg
 from camera import Camera
 from textures import create_surface
 
-DEV_MODE= True
+DEV_MODE= False
 
 class Modules:
     blocks= blocks
@@ -26,7 +26,14 @@ class Pygame():
         pg.init()
         self.fps= fps
         window_size= pg.display.get_desktop_sizes()[0]
-        self.screen = pg.display.set_mode(size= [size /2 for size in window_size],flags= pg.DOUBLEBUF | (0 if DEV_MODE else pg.FULLSCREEN))
+        self.screen = pg.display.set_mode(
+            size= [(size /2 if DEV_MODE else size) for size in window_size], 
+            flags= pg.DOUBLEBUF | (
+                0 if DEV_MODE 
+                else pg.FULLSCREEN | pg.SCALED | pg.NOFRAME
+            ),
+            vsync= True
+        )
         self.screen.set_alpha(None)
         pg.display.flip()
         pg.display.set_caption(f"Factory Tycoon ({'DEVELOPMENT MODE' if DEV_MODE else 'RELEASE MODE'})")
@@ -51,7 +58,7 @@ class Game:
             if type(Q) == type(quests.Quest) and Q != quests.Quest:
                 self.quests.insert(0, Q(self))
         self.cam= Camera(self)
-        self.map= map.Map(self, init_block= blocks.GlobalSeller(self))
+        self.map= map.Map(self, init_block= blocks.Trash(self))
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []
@@ -130,6 +137,10 @@ if __name__ == "__main__":
 
     my_seller= blocks.GlobalSeller(g)
     g.map.place(my_seller, (1, 1))
+
+    no_textured_block = blocks.Sorter(g)
+    g.map.place(no_textured_block, (5, 5))
+    
     print("MAP BEFORE START:\n", str(g.map))
     print(g.map.get_block(0, 0))
     g.start()

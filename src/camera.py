@@ -1,5 +1,6 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event, display
 from font import TEXT_FONT
+from math import ceil
 
 ZOOM_SPEED: int= 5
 MOVING_BUTTON_ID: int= 2 # 2 = wheel_button
@@ -54,6 +55,7 @@ class Camera():
         screen_size= display.get_window_size()
         coordonates= coordonates[0], coordonates[1]*-1 # Because for the screen, go upper means to decrease the y axis
         position = self.position[0], self.position[1]*-1
+
         x, y= [
             (coordonates[i] - position[i]/100) * self.zoom
             + (screen_size[i] - self.zoom)/2
@@ -63,7 +65,7 @@ class Camera():
     def get_screen_center_coordonates(self):
         position = [
             pos / 100 * self.zoom
-            for pos in self.position
+            for pos in (self.position[0], -self.position[1])
         ]
 
         x, y = [
@@ -73,7 +75,7 @@ class Camera():
             )/ self.zoom) # It works, but idk how
             for i in range(2)
         ]
-        return x, y
+        return x, -y
     def get_cursor_coordonates(self):
         mouse_pos= mouse.get_pos()
         screen_size = display.get_window_size()
@@ -83,7 +85,7 @@ class Camera():
         ]
         position = [
             pos / 100 * self.zoom
-            for pos in self.position
+            for pos in (self.position[0], -self.position[1])
         ]
 
         x, y = [
@@ -95,27 +97,38 @@ class Camera():
         ]
         return x, -y
     def draw(self):
-        self.game.pygame.screen.fill(colordict.THECOLORS["purple"])
+        self.game.pygame.screen.fill(colordict.THECOLORS["darkgray"])
         center_x, center_y= self.get_screen_center_coordonates()
+        screen_w, screen_h= display.get_window_size()
+        max_fittable_blocks= ceil(screen_w /self.zoom) +2, ceil(screen_h /self.zoom) +2
+        ranges= {
+            "x": [
+                int(
+                    center_x + max_fittable_blocks[0]//2 * (i - 1) # ==> (i - 1) <=> [-1] pour le 1e élément et [+1] pour le second (permet de faire en sorte que le "+" se transforme en "-")
+                    + .5 * i # ==> Ajoute 1 si c'est le 2nd élément (car le range ne prendra pas le dernier élément)
+                )
+                for i in (0, 2)
+            ],
+            "y": [
+                int(
+                    center_y + max_fittable_blocks[1]//2 * (i - 1) # ==> Voir les explications ci-dessus
+                    + .5 * i # ==> Voir les explications ci-dessus
+                )
+                for i in (0, 2)
+            ]
+        }
         drawed= 0
-        
         def draw_block(x: int, y: int):
             block = self.game.map.get_block(x, y)
             return block.draw() if block else None
-        for x_coef in (-1, 0, 1):
-            x = center_x + x_coef
-            while draw_block(x, center_y): # While the block in the x axis can be drawed
-                drawed+= 1
-                for y_coef in (-1, 1):
-                    y = center_y + y_coef
-                    while draw_block(x, y): # While the block in the y axis can be drawed
-                        drawed+= 1
-                        y+= y_coef # Move to the next block (verticaly)
-                
-                if not x_coef: break
-                x+= x_coef # Move to the next block (horizontaly)
+        for x in range(*ranges["x"]):
+            for y in range(*ranges["y"]):
+                if draw_block(x, y):
+                    drawed+= 1
         if self.game.DEV_MODE:
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 35), f"POINTED COORDONATES: {self.get_cursor_coordonates()}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 50), f"POSITION: {self.position}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 65), f"SCREEN CENTER BLOCK: {(center_x, center_y)}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 80), f"PRINT RANGE: {(ranges['x'][0], ranges['y'][0])}, {(ranges['x'][1], ranges['y'][1])}", (255, 255, 255))
