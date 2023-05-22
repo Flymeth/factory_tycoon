@@ -71,7 +71,7 @@ class Camera():
             )/ self.zoom) # It works, but idk how
             for i in range(2)
         ]
-        return x, -y
+        return x, y
     def get_cursor_coordonates(self):
         mouse_pos= mouse.get_pos()
         screen_size = display.get_window_size()
@@ -113,6 +113,7 @@ class Camera():
                 if not x_coef: break
                 x+= x_coef # Move to the next block (horizontaly)
         if self.game.DEV_MODE:
-            TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (0, 0, 0))
-            TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (0, 0, 0))
-            TEXT_FONT.render_to(self.game.pygame.screen, (5, 35), f"POINTED COORDONATES: {self.get_cursor_coordonates()}", (0, 0, 0))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 35), f"POINTED COORDONATES: {self.get_cursor_coordonates()}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 50), f"POSITION: {self.position}", (255, 255, 255))

@@ -31,10 +31,10 @@ class Map:
             if "b" in key and y + block_size <= height:
                 generate_directions+= Direction.fast("s")
                 print("> AUTO GENERATING IN SOUTH DIRECTION...")
-            if "l" in key and x >= 0:
+            if "l" in key and x + block_size <= width:
                 generate_directions+= Direction.fast("w")
                 print("> AUTO GENERATING IN WEST DIRECTION...")
-            if "r" in key and x + block_size <= width:
+            if "r" in key and x >= 0:
                 generate_directions+= Direction.fast("e")
                 print("> AUTO GENERATING IN EAST DIRECTION...")
         if generate_directions:
@@ -88,15 +88,17 @@ class Map:
             if dir in (Direction.North, Direction.South):
                 chunck= self.create_chuck(self.width, size)
 
+                if dir == Direction.North:
+                    self.__center = ( # As we modify all the map's block position, we need to modify the map's center
+                        self.__center[0], 
+                        self.__center[1] + size
+                    )
                 for index in range(self.width):
                     if dir == Direction.North:
-                        self.__center = ( # As we modify all the map's block position, we need to modify the map's center
-                            self.__center[0], 
-                            self.__center[1] + size
-                        )
                         self.matrice[index] = chunck[index] + self.matrice[index]
                     else:
                         self.matrice[index] += chunck[index]
+                    
             elif dir in (Direction.East, Direction.West):
                 chunck= self.create_chuck(size, self.height)
 
