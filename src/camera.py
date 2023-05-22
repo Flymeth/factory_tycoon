@@ -39,7 +39,8 @@ class Camera():
         mouse.set_visible(not self.moving_camera)
         event.set_grab(self.moving_camera)
         if self.moving_camera:
-            rel= mouse.get_rel()
+            rel= list(mouse.get_rel())
+            rel[1]*= -1
             self.position= [
                 self.position[i] - rel[i]
                 for i in range(2)
@@ -52,8 +53,9 @@ class Camera():
         """
         screen_size= display.get_window_size()
         coordonates= coordonates[0], coordonates[1]*-1 # Because for the screen, go upper means to decrease the y axis
+        position = self.position[0], self.position[1]*-1
         x, y= [
-            (coordonates[i] - self.position[i]/100) * self.zoom
+            (coordonates[i] - position[i]/100) * self.zoom
             + (screen_size[i] - self.zoom)/2
             for i in range(2)
         ]
@@ -96,7 +98,7 @@ class Camera():
         self.game.pygame.screen.fill(colordict.THECOLORS["purple"])
         center_x, center_y= self.get_screen_center_coordonates()
         drawed= 0
-
+        
         def draw_block(x: int, y: int):
             block = self.game.map.get_block(x, y)
             return block.draw() if block else None

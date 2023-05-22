@@ -6,7 +6,7 @@ import quests
 import market
 from direction_sys import Direction
 from uuid import uuid1, UUID
-from typing import Callable, Self, Any
+from typing import Callable, Any, Self
 import pygame as pg
 from camera import Camera
 from textures import create_surface
@@ -51,7 +51,7 @@ class Game:
             if type(Q) == type(quests.Quest) and Q != quests.Quest:
                 self.quests.insert(0, Q(self))
         self.cam= Camera(self)
-        self.map= map.Map(self)
+        self.map= map.Map(self, init_block= blocks.GlobalSeller(self))
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     g.map.generate_chunks(Direction.fast("a"), 5)
 
     my_seller= blocks.GlobalSeller(g)
-    g.map.place(my_seller, (0, 0))
+    g.map.place(my_seller, (1, 1))
     print("MAP BEFORE START:\n", str(g.map))
     print(g.map.get_block(0, 0))
     g.start()

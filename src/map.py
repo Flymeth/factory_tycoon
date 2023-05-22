@@ -4,16 +4,17 @@ from pygame.display import get_window_size
 from typing import Callable
 
 class Map:
-    def __init__(self, game, auto_generate_chunks= True) -> None:
+    def __init__(self, game, init_block: Block, auto_generate_chunks= True) -> None:
         from _main import Game
 
         self.game: Game= game
-        self.matrice= [[]]
+        self.matrice= [[init_block]]
         self.__center= 0, 0 # Les coordonnées du centre du monde
         if auto_generate_chunks:
             self.game.add_event("tick", lambda g, e: self.check_and_generate_chunks())
         pass
     def check_and_generate_chunks(self):
+        assert self.game, "Cannot check and generate chunks automatically without the game object"
         extremities= {
             "tl": self.matrice[0][0],
             "tr": self.matrice[-1][0],
@@ -25,17 +26,19 @@ class Map:
         block_size = self.game.cam.zoom
         for key in extremities:
             x, y= self.game.cam.get_screen_position(extremities[key].coordonates)
+            
+            # Some code samples bellow are not logic, but it works, so fuck it :)
             if "t" in key and y >= 0:
                 generate_directions+= Direction.fast("n")
                 print("> AUTO GENERATING IN NORTH DIRECTION...")
             if "b" in key and y + block_size <= height:
                 generate_directions+= Direction.fast("s")
                 print("> AUTO GENERATING IN SOUTH DIRECTION...")
-            if "l" in key and x + block_size <= width:
-                generate_directions+= Direction.fast("w")
-                print("> AUTO GENERATING IN WEST DIRECTION...")
             if "r" in key and x >= 0:
                 generate_directions+= Direction.fast("e")
+                print("> AUTO GENERATING IN WEST DIRECTION...")
+            if "l" in key and x + block_size <= width:
+                generate_directions+= Direction.fast("w")
                 print("> AUTO GENERATING IN EAST DIRECTION...")
         if generate_directions:
             self.generate_chunks(
@@ -245,9 +248,10 @@ class Map:
 if __name__ == "__main__":
     from items import GoldIngot
 
-    m= Map(None, False)
-    m.generate_chunks(Direction.fast("a"), 5)
-    print(m.find_blocks(lambda block: block == m.get_block(-4, -2)))
+    m= Map(None, Trash(None), False)
+    m.generate_chunks(Direction.fast("w"), 5)
+    print(m.matrice)
+    # print(m.find_blocks(lambda block: block == m.get_block(-4, -2)))
 
     # my_trash= Trash(None)
     # my_sorter= Sorter(None)
