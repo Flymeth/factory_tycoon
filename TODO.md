@@ -10,6 +10,8 @@
 
 > player.py
 
+* Faire la fonction de changement d'item (voir dans le gui)
+
 ## Map
 
 > map.py

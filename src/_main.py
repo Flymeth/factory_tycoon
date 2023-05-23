@@ -11,7 +11,7 @@ import pygame as pg
 from camera import Camera
 from textures import create_surface
 
-DEV_MODE= False
+DEV_MODE= True
 
 class Modules:
     blocks= blocks
@@ -58,7 +58,10 @@ class Game:
             if type(Q) == type(quests.Quest) and Q != quests.Quest:
                 self.quests.insert(0, Q(self))
         self.cam= Camera(self)
-        self.map= map.Map(self, init_block= blocks.Trash(self))
+
+        init_block = blocks.Trash(self)
+        init_block.block_bellow = init_block
+        self.map= map.Map(self, init_block= init_block)
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []

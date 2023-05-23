@@ -97,6 +97,7 @@ class Camera():
         ]
         return x, -y
     def draw(self):
+        assert self.game, "Cannot draw without the game object"
         self.game.pygame.screen.fill(colordict.THECOLORS["darkgray"])
         center_x, center_y= self.get_screen_center_coordonates()
         screen_w, screen_h= display.get_window_size()
@@ -125,6 +126,8 @@ class Camera():
             for y in range(*ranges["y"]):
                 if draw_block(x, y):
                     drawed+= 1
+        
+        self.game.player.inventory_bar.draw()
         if self.game.DEV_MODE:
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (255, 255, 255))

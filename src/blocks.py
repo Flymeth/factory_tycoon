@@ -6,7 +6,7 @@ from pygame import transform, display
 from font import TEXT_FONT, TITLE_FONT
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "no_texture", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0) -> None:
         from items import Item
         from _main import Game
 

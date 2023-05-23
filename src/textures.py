@@ -2,10 +2,11 @@ from pygame import image, Surface
 cache: dict[str, Surface]= {}
 
 def create_surface(texture_path: str) -> Surface:
+    if not texture_path: texture_path= "src/assets/no_texture.png"
     return image.load(texture_path, f"Image at path {texture_path}")
 
 def get_texture(texture_category: str, texture_name: str) -> Surface:
-    texture_path= f"src/assets/{texture_category}/{texture_name}.png"
+    texture_path= f"src/assets/{texture_category}/{texture_name}.png" if texture_category and texture_name else ""
     if texture_path in cache:
         return cache[texture_path]
     else:
