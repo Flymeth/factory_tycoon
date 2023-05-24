@@ -1,10 +1,13 @@
 from quests import Quest
-from blocks import Trash, GlobalSeller
+from blocks import Trash, GlobalSeller, Convoyer, Sorter, DiamondGenerator
 from items import Item
 from gui import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9
+from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
+fast_edit_key= K_a
+rotate_key= K_r
+
 class Player:
     def __init__(self, game, name: str, default_credits= 0, default_quests: list[Quest]= []) -> None:
         from _main import Game
@@ -16,7 +19,7 @@ class Player:
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
 
-        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game)])
+        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), DiamondGenerator(game)])
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
@@ -26,12 +29,27 @@ class Player:
         self.credits+= amount
         return self.credits
     def key_pressed(self, key: int):
-        if not key in keys_index: return
-        index= keys_index.index(key)
-        if index >= len(self.inventory_bar.content): return
-        self.inventory_bar.selected= index
-        if self.game.DEV_MODE:
-            print(f"ITEM INDEX SET TO {index}.")
+        if key in keys_index:
+            index= keys_index.index(key)
+            if index >= len(self.inventory_bar.content): return
+            self.inventory_bar.selected= index
+            if self.game.DEV_MODE:
+                print(f"ITEM INDEX SET TO {index}.")
+            return
+        
+        cursor= self.game.cam.get_cursor_coordonates()
+        block = self.game.map.get_block(*cursor)
+        if not block: return
+        actualisation_required= False
+        if key == fast_edit_key:
+            if not  getattr(block, "fast_edit", False): return
+            actualisation_required= block.fast_edit()
+        elif key == rotate_key:
+            if block.rotable:
+                block.right_rotations= (block.right_rotations +1)% 4
+                actualisation_required= True
+        if actualisation_required:
+            self.game.map.actualize(cursor)
     def clicked(self, button: int):
         if not button in (1, 3): return # 1 = left click; 3 = right click
         mouse_position= mouse.get_pos()
@@ -47,6 +65,7 @@ class Player:
         ):
             gui_mouse_position_x = mouse_position[0] - navbar_rect["position"][0]
             index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings/2)
+            if index >= len(self.inventory_bar.content): return
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
             self.inventory_bar.selected = int(index)

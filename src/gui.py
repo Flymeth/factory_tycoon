@@ -1,6 +1,5 @@
 from blocks import Block
 from pygame import surface, display, transform
-from textures import get_texture
 
 class InventoryBar():
     def __init__(self, game, content: list[Block] = []) -> None:
@@ -29,8 +28,8 @@ class InventoryBar():
         """
         window_size = display.get_window_size()
         width, height = (
-            len(self.content) * (self.items_size + self.paddings /2) + self.paddings *2,
-            self.items_size + self.paddings *2
+            self.paddings + len(self.content) * (self.items_size + self.paddings),
+            self.paddings *2 + self.items_size
         )
         return {
             "size": (width, height),
@@ -51,7 +50,7 @@ class InventoryBar():
                 self.paddings
             )
             texture= transform.scale(
-                get_texture("blocks", block.texture),
+                block.texture,
                 [self.items_size] * 2
             )
             if index != self.selected: texture.set_alpha(120)

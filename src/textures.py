@@ -1,8 +1,9 @@
 from pygame import image, Surface
+from os.path import exists
 cache: dict[str, Surface]= {}
 
 def create_surface(texture_path: str) -> Surface:
-    if not texture_path: texture_path= "src/assets/no_texture.png"
+    if not (texture_path and exists(texture_path)): texture_path= "src/assets/no_texture.png"
     return image.load(texture_path, f"Image at path {texture_path}")
 
 def get_texture(texture_category: str, texture_name: str) -> Surface:

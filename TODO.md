@@ -26,7 +26,11 @@
 
 > blocks.py
 
-* faire le block "convoyer belt"
+## Items
+
+> items.py
+
+* faire la texture des items
 
 ## Camera
 

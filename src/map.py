@@ -114,7 +114,14 @@ class Map:
 
             generated.append(chunck)
         return tuple(generated)
-    
+    def actualize(self, coordonates: tuple[int, int]):
+        """ Actualize the block for properties that need to be matched with blocks around
+        """
+        try:
+            self.place(self.delete(coordonates), coordonates)
+        except AssertionError as err:
+            if self.game.DEV_MODE:
+                print(f"Cannot actualize block:\n{err}")
     def place(self, block: Block, coordonates: tuple[int, int]):
         """ Places a block in the map
             This method crashes if there is another block at this position

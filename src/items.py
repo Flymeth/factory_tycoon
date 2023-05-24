@@ -1,7 +1,9 @@
 from uuid import uuid1
+from pygame import Surface
+from textures import get_texture
 
 class Item:
-    def __init__(self, game, name: str, value: float, texture: str = None) -> None:
+    def __init__(self, game, name: str, value: float, texture: str | Surface = "") -> None:
         from blocks import Block
         from _main import Game
 
@@ -9,9 +11,12 @@ class Item:
         self.id= uuid1()
         self.name= name
         self.value= value
-        self.texture= texture or name.lower()
+        self._texture= texture if type(texture) == Surface else (texture or name.lower())
         self.crafts: list[dict[Block, list[Item]]] = []
         pass
+    @property
+    def texture(self) -> Surface:
+        return self._texture if type(self._texture) == Surface else get_texture("items", self._texture)
 
 class DiamondIngot(Item):
     def __init__(self, game):
