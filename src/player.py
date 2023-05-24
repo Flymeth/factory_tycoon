@@ -1,5 +1,5 @@
 from quests import Quest
-from blocks import Trash, GlobalSeller, Convoyer, Sorter, DiamondGenerator
+from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator
 from items import Item
 from gui import InventoryBar
 from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r
@@ -19,7 +19,7 @@ class Player:
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
 
-        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), DiamondGenerator(game)])
+        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), Generator(game)])
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))

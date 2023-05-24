@@ -153,7 +153,7 @@ class Camera():
         return x, -y
     def draw(self):
         assert self.game, "Cannot draw without the game object"
-        self.game.pygame.screen.fill(colordict.THECOLORS["darkgray"])
+        self.game.pygame.screen.fill(colordict.THECOLORS["gray20"])
         center_x, center_y= self.get_screen_center_coordonates()
         screen_w, screen_h= display.get_window_size()
         max_fittable_blocks= ceil(screen_w /self.zoom) +2, ceil(screen_h /self.zoom) +2

@@ -5,7 +5,6 @@ import player
 import quests
 import market
 from direction_sys import Direction
-from uuid import uuid1, UUID
 from typing import Callable, Any, Self
 import pygame as pg
 from camera import Camera
@@ -40,15 +39,18 @@ class Pygame():
         self.clock = pg.time.Clock()
         self.app = pg
         self.dt = 0
+        self.ticks= 0
     def next_tick(self) -> float:
         self.dt = self.clock.tick(self.fps)/ 1000
+        self.ticks+= 1
         return self.dt
 
 class Game:
     Modules= Modules
     def __init__(self, player_name: str, max_fps= 144) -> None:
         self.pygame= Pygame(max_fps)
-        self.events: dict[str, list[tuple[UUID, Callable[[Self, pg.event.Event], None], bool]]]= {}
+        self.next_event_id= 0
+        self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
         self.running= True
         self.DEV_MODE= DEV_MODE
         self.quests: list[quests.Quest]= []
@@ -75,7 +77,7 @@ class Game:
 
             for event in self.pygame.app.event.get():
                 self.fire_event(event.type, event)
-            self.fire_event("tick", pg.event.Event(-1, {"dt": self.pygame.dt}))
+            self.fire_event("tick", pg.event.Event(-1, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
             if not self.running: break
 
             self.pygame.next_tick()
@@ -91,17 +93,19 @@ class Game:
         """ Add an handler to an event
             Returns the handler's id
         """
-        ev_id= uuid1()
+        ev_id= self.next_event_id
         if not ev_identifier in self.events:
             self.events[ev_identifier]= []
         self.events[ev_identifier].append((ev_id, handler, once))
+
+        self.next_event_id+= 1
         return ev_id
     def rmv_event(self, ev_name: str):
         """ Remove all handlers from an event
         """
         if ev_name in self.events:
             del self.events[ev_name]
-    def rmv_handler(self, predicate: UUID | Callable[[Self, pg.event.Event], None]):
+    def rmv_handler(self, predicate: int | Callable[[Self, pg.event.Event], None]):
         """ Remove an event's handler
         """
         for name in self.events:
@@ -112,6 +116,11 @@ class Game:
                         self.rmv_event(name)
                     return
         raise IndexError("Event not in the event list")
+    def get_event_data(self, predicate: int | Callable[[Self, pg.event.Event], None]):
+        for name in self.events:
+            for ev_data in self.events[name]:
+                if predicate in ev_data:
+                    return ev_data
     def fire_event(self, ev_identifier: Any, ev_data: pg.event.Event):
         """ Fires an event and call all its handlers
         """
@@ -137,11 +146,11 @@ if __name__ == "__main__":
 
     g.map.generate_chunks(Direction.fast("a"), 5)
 
-    my_seller= blocks.GlobalSeller(g)
-    g.map.place(my_seller, (1, 1))
+    # my_seller= blocks.GlobalSeller(g)
+    # g.map.place(my_seller, (1, 1))
 
-    no_textured_block = blocks.Sorter(g)
-    g.map.place(no_textured_block, (5, 5))
+    # no_textured_block = blocks.Sorter(g)
+    # g.map.place(no_textured_block, (5, 5))
     
     print("MAP BEFORE START:\n", str(g.map))
     print(g.map.get_block(0, 0))

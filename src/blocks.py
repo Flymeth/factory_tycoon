@@ -1,12 +1,12 @@
 from direction_sys import Direction
-from items import Item
+from items import Item, Stone
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface
 from font import TEXT_FONT, TITLE_FONT
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 15) -> None:
         from items import Item
         from _main import Game
 
@@ -47,6 +47,7 @@ class Block:
         self.processed_items: list[Item] = []
         self.next_item_output: Direction.typeof = Direction.fast("a") # Si la sortie du prochain item doit être choisie, sinon cela prendre une sortie au hazard parmis la liste des sorties
         self.block_bellow: Block | None= None
+        self.update_interval: int = update_each
         pass
     @property
     def texture(self) -> Surface:
@@ -77,10 +78,11 @@ class Block:
                 angle
             ), [self.game.cam.zoom]*2
         )
-        self.game.pygame.screen.blit(texture, (x, y))
+        self.game.pygame.screen.blit(self.postprocessing(texture), (x, y))
         return True
-    def exec(self):pass
-    def fast_edit(self) -> bool:pass
+    def exec(self): pass
+    def fast_edit(self) -> bool: pass
+    def postprocessing(self, texture: Surface) -> Surface: return texture
     def __str__(self) -> str:
         return self.identifier[0].upper()
 
@@ -89,11 +91,11 @@ class Seller(Block):
         super().__init__(game, identifier= "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1, rotable= False)
         self.accept= sell_type
     def exec(self):
-        if self.requires_maintenance: return
+        if self.requires_maintenance or not self.processing_items: return
 
-        item = self.processed_items[0] # Pas de pop() car si l'item est invalide on le laisse dans la machine
+        item = self.processing_items[0] # Pas de pop() car si l'item est invalide on le laisse dans la machine
         if not self.accept or item in self.accept:
-            self.processed_items.pop(0)
+            self.processing_items.pop(0)
             self.game.player.selled.append(item)
             
             item_value= item.value * (self.game.marked.courts.get(item.name) or 1)
@@ -114,33 +116,31 @@ class Trash(Block):
         self.processing_items= []
 
 class Generator(Block):
-    def __init__(self, game, ingot_type: type[Item], ingot_spawn_chance: float = .35) -> None:
+    def __init__(self, game, ingot_type: type[Item]= Stone, ingot_spawn_chance: float = .35) -> None:
         assert 0 <= ingot_spawn_chance <= 1, "Spawn change must be between 0 and 1 included"
-        from items import Cobble
-        
-        texture= get_texture("blocks", "generator")
-        ingot_texture= ingot_type(game).texture
+        super().__init__(game, "generator", outputs= Direction.fast("a"), texture= "generator", rotable= False)
 
+        self.ingot_texture= ingot_type(game).texture
+        self.extracts = ingot_type
+        self.others: list[type[Item]]= [Stone]
+        self.spawn_chance= ingot_spawn_chance
+    def exec(self):
+        self.processed_items.append(
+            (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
+            (self.game) # Et ici on instancie cette classe
+        )
+        print("Added items")
+    def postprocessing(self, texture: Surface) -> Surface:
+        ingot_texture= self.ingot_texture
         texture_size= texture.get_size()[0]
-        ingot_texture_size= texture_size /4
+        ingot_texture_size= texture_size /2
         
         ingot_texture_pos= (texture_size - ingot_texture_size) /2
-
         texture.blit(
             transform.scale(ingot_texture, [ingot_texture_size] *2),
             [ingot_texture_pos] *2
         )
-
-        super().__init__(game, "generator", outputs= Direction.fast("a"), texture= texture, rotable= False)
-        self.extracts = ingot_type
-        self.others: list[type[Item]]= [Cobble]
-        self.spawn_chance= ingot_spawn_chance
-    def exec(self):
-        self.processing_items.append(
-            (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
-            (self.game) # Et ici on instancie cette classe
-        )
-        return super().exec()
+        return texture
 
 class DiamondGenerator(Generator):
     def __init__(self, game) -> None:

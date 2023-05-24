@@ -2,6 +2,7 @@ from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
+from random import choice
 
 class Map:
     def __init__(self, game, init_block: Block, auto_generate_chunks= True) -> None:
@@ -10,9 +11,47 @@ class Map:
         self.game: Game= game
         self.matrice= [[init_block]]
         self.__center= 0, 0 # Les coordonnées du centre du monde
+        self.ev= self.game.add_event("tick", lambda g, e: self.update())
         if auto_generate_chunks:
             self.game.add_event("tick", lambda g, e: self.check_and_generate_chunks())
         pass
+    def update(self):
+        """ Update the map's block
+        """
+        assert self.game, "Game object is required to use this function"
+        tick= self.game.pygame.ticks
+        if not tick: return
+
+        blocks = self.flatten()
+        #! IDK why but the `blocks` array becomes empty when the user is clicking the on screen
+        # Updating each blocks (if required)
+        [
+            block.exec()
+            for block in blocks
+            if not block.update_interval%tick
+        ]
+        # Distributing items --> do it after updates to avoid 'fast travel'
+        for block in blocks:
+            if block.processed_items and block.outputs and block.connected["out"]:
+                valid_outputs_indexes: list[int]= []
+                if type(block.next_item_output) == Direction.single:
+                    if not block.next_item_output in block.outputs: continue
+                    valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
+                else:
+                    for direction in block.next_item_output:
+                        if not direction in block.outputs: continue
+                        valid_outputs_indexes.append(block.outputs.index(direction))
+                if not valid_outputs_indexes: continue
+
+                choosed_index= choice(valid_outputs_indexes)
+                found_data: list[Block] = [out_block for index, out_block in block.connected["out"] if index == choosed_index]
+                assert len(found_data) <= 1, "Error when distributing items."
+
+
+                out_block= found_data[0]
+                print(out_block)
+                out_block.processing_items.append(block.processed_items.pop(0))
+
     def check_and_generate_chunks(self):
         assert self.game, "Cannot check and generate chunks automatically without the game object"
         extremities= {
@@ -208,6 +247,7 @@ class Map:
         x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
         assert not isinstance(self.matrice[x][y], FloorBlock), "Tried to delete the floor"
         deleted = self.matrice[x][y]
+
         # Remove connections
         for connection_in, block in deleted.connected["in"]:
             if block == deleted:
@@ -236,7 +276,10 @@ class Map:
         ]
 
     def flatten(self) -> list[Block]:
-        return [self.matrice[x][y] for x in range(self.width) for y in range(self.height)]
+        array= []
+        for index in range(self.width):
+            array+= self.matrice[index]
+        return array
     def __str__(self) -> str:
         reversed_map: list[list[Block]]= []
         for column in self.matrice:

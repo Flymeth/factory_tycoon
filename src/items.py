@@ -1,14 +1,17 @@
-from uuid import uuid1
 from pygame import Surface
 from textures import get_texture
 
+next_item_id= 0
 class Item:
     def __init__(self, game, name: str, value: float, texture: str | Surface = "") -> None:
+        global next_item_id
         from blocks import Block
         from _main import Game
 
         self.game: Game= game
-        self.id= uuid1()
+        self.id= next_item_id
+        next_item_id+= 1
+
         self.name= name
         self.value= value
         self._texture= texture if type(texture) == Surface else (texture or name.lower())
@@ -42,13 +45,13 @@ class IronIngot(Item):
             {IronGenerator: []}
         ]
 
-class Cobble(Item):
+class Stone(Item):
     def __init__(self, game) -> None:
         from blocks import Generator
-        super().__init__(game, "cobble", 1)
+        super().__init__(game, "stone", 1)
         self.crafts= [
             {Generator: []}
         ]
 
 if __name__ == "__main__":
-    print({Cobble(None).id: "hello"})
+    print({Stone(None).id: "hello"})
