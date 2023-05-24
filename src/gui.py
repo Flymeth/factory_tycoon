@@ -20,9 +20,6 @@ class InventoryBar():
         selected = self.content[self.selected]
         self.content[self.selected]= self.content[self.selected].__class__(self.game)
         return selected
-    def change_selected_item(self, mouse_x: int, mouse_y: int):
-        
-        pass
     def get_rect(self):
         """ Return the rect of the gui
             {
@@ -57,9 +54,8 @@ class InventoryBar():
                 get_texture("blocks", block.texture),
                 [self.items_size] * 2
             )
-            gui.blit(
-                texture if index == self.selected else transform.grayscale(texture), 
-                (x, y)
-            )
+            if index != self.selected: texture.set_alpha(120)
+            
+            gui.blit(texture, (x, y))
 
         self.game.pygame.screen.blit(gui, rect["position"])

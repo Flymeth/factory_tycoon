@@ -34,7 +34,6 @@ class Pygame():
             ),
             vsync= True
         )
-        self.screen.set_alpha(None)
         pg.display.flip()
         pg.display.set_caption(f"Factory Tycoon ({'DEVELOPMENT MODE' if DEV_MODE else 'RELEASE MODE'})")
         pg.display.set_icon(create_surface("src/assets/icon.png"))

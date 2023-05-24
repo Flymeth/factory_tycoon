@@ -1,9 +1,10 @@
 from quests import Quest
-from blocks import Block, Trash, GlobalSeller
+from blocks import Trash, GlobalSeller
 from items import Item
 from gui import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse
+from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9
 
+keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 class Player:
     def __init__(self, game, name: str, default_credits= 0, default_quests: list[Quest]= []) -> None:
         from _main import Game
@@ -19,25 +20,47 @@ class Player:
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
+        self.game.add_event(KEYDOWN, lambda g, e: self.key_pressed(e.key))
         pass
     def gain(self, amount: float) -> float:
         self.credits+= amount
         return self.credits
+    def key_pressed(self, key: int):
+        if not key in keys_index: return
+        index= keys_index.index(key)
+        if index >= len(self.inventory_bar.content): return
+        self.inventory_bar.selected= index
+        if self.game.DEV_MODE:
+            print(f"ITEM INDEX SET TO {index}.")
     def clicked(self, button: int):
         if not button in (1, 3): return # 1 = left click; 3 = right click
         mouse_position= mouse.get_pos()
         navbar_rect= self.inventory_bar.get_rect()
-        print(mouse_position, navbar_rect)
+        if self.game.DEV_MODE:
+            print("CLICKED POSITION & GUI RECT:")
+            print(mouse_position, navbar_rect)
+
         if(
             len([None for i in range(2)
                 if navbar_rect["position"][i] <= mouse_position[i] <= navbar_rect["position"][i] + navbar_rect["size"][i]
             ]) == 2
         ):
-            return self.inventory_bar.change_selected_item(*mouse_position)
+            gui_mouse_position_x = mouse_position[0] - navbar_rect["position"][0]
+            index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings/2)
+            if self.game.DEV_MODE:
+                print(f"ITEM INDEX SET TO {index}.")
+            self.inventory_bar.selected = int(index)
         else:
-            if button == 1:
-                self.place()
-            else: self.remove()
+            if self.game.DEV_MODE:
+                print(f"ACTION: {'placed' if button == 1 else 'removed'} block.")
+            try:
+                if button == 1:
+                    self.place()
+                else: self.remove()
+            except AssertionError as err:
+                if self.game.DEV_MODE:
+                    print("ERROR WHEN WANTING TO DO THIS ACTION:")
+                    print(err)
     def place(self):
         assert self.game, "Cannot perform this action because the game object is required"
         assert self.inventory_bar.selected >= 0, "Player has not selected an item"
