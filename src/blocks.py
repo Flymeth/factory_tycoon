@@ -125,11 +125,11 @@ class Generator(Block):
         self.others: list[type[Item]]= [Stone]
         self.spawn_chance= ingot_spawn_chance
     def exec(self):
+        if self.processed_items: return
         self.processed_items.append(
             (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
             (self.game) # Et ici on instancie cette classe
         )
-        print("Added items")
     def postprocessing(self, texture: Surface) -> Surface:
         ingot_texture= self.ingot_texture
         texture_size= texture.get_size()[0]
@@ -188,7 +188,8 @@ class Convoyer(Block):
         else: self.set_straight()
         return False
     def exec(self):
-        pass
+        if not self.processing_items: return
+        self.processed_items.append(self.processing_items.pop(0))
 
 class FloorBlock(Block):
     def __init__(self, game, identifier: str, texture="default_floor_texture") -> None:

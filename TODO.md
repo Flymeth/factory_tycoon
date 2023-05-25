@@ -1,9 +1,5 @@
 # TODO
 
-## Important Bugs
-
-1. `map.py:26` => When user clicks on the window, the "tick" event doesn't fire anymore
-
 ## Quests
 
 > quests.py

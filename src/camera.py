@@ -190,3 +190,4 @@ class Camera():
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 50), f"POSITION: {self.position}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 65), f"SCREEN CENTER BLOCK: {(center_x, center_y)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 80), f"PRINT RANGE: {(ranges['x'][0], ranges['y'][0])}, {(ranges['x'][1], ranges['y'][1])}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 95), f"CREDIT: {self.game.player.credits}", (255, 255, 255))

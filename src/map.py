@@ -28,29 +28,32 @@ class Map:
         [
             block.exec()
             for block in blocks
-            if not block.update_interval%tick
+            if not tick%block.update_interval
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
-            if block.processed_items and block.outputs and block.connected["out"]:
-                valid_outputs_indexes: list[int]= []
-                if type(block.next_item_output) == Direction.single:
-                    if not block.next_item_output in block.outputs: continue
-                    valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
-                else:
-                    for direction in block.next_item_output:
-                        if not direction in block.outputs: continue
-                        valid_outputs_indexes.append(block.outputs.index(direction))
-                if not valid_outputs_indexes: continue
-
-                choosed_index= choice(valid_outputs_indexes)
-                found_data: list[Block] = [out_block for index, out_block in block.connected["out"] if index == choosed_index]
-                assert len(found_data) <= 1, "Error when distributing items."
-
-
-                out_block= found_data[0]
-                print(out_block)
-                out_block.processing_items.append(block.processed_items.pop(0))
+            if not tick%block.update_interval:
+                if type(block) == Generator:
+                    pass
+                if block.processed_items and block.outputs and block.connected["out"]:
+                    valid_outputs_indexes: list[int]= []
+                    if type(block.next_item_output) == Direction.single:
+                        if not (block.next_item_output in block.outputs): continue
+                        valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
+                    else:
+                        for direction in block.next_item_output:
+                            if not direction in block.outputs: continue
+                            valid_outputs_indexes.append(block.outputs.index(direction))
+                    if not valid_outputs_indexes: continue
+                    
+                    valid_blocks= [
+                        out_block
+                        for index, out_block in block.connected["out"]
+                        if index in valid_outputs_indexes
+                    ]
+                    if not valid_blocks: continue
+                    out_block= choice(valid_blocks)
+                    out_block.processing_items.append(block.processed_items.pop(0))
 
     def check_and_generate_chunks(self):
         assert self.game, "Cannot check and generate chunks automatically without the game object"
@@ -181,15 +184,15 @@ class Map:
         for overflow_x in range(-1, 2):
             for overflow_y in range(-1, 2):
                 if bool(overflow_x) == bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
-                x, y= coordonates[0] + overflow_x, coordonates[1] + overflow_y
-                if 0 <= x <= self.width and 0 <= y <= self.height:
-                    side_block= self.matrice[x][y]
+                side_x, side_y= self.__generic_coordonates_to_matrice_coordonate__(coordonates[0] + overflow_x, coordonates[1] + overflow_y)
+                if 0 <= side_x <= self.width and 0 <= side_y <= self.height:
+                    side_block= self.matrice[side_x][side_y]
                     if isinstance(side_block, FloorBlock): continue
 
                     # Sided_block connection side (without any rotation)
                     initial_sided_possible_connection= \
-                        Direction.North if overflow_y == 1 else \
-                        Direction.South if overflow_y == -1 else \
+                        Direction.North if overflow_y == -1 else \
+                        Direction.South if overflow_y == 1 else \
                         Direction.East if overflow_x == -1 else Direction.West
                     # Same with rotation
                     rotated_sided_possible_connection= Direction.rotate(initial_sided_possible_connection, side_block.right_rotations)
@@ -200,7 +203,7 @@ class Map:
                     # Block connection side (without any rotation)
                     initial_block_possible_connection= (initial_sided_possible_connection +2) %4
                     # Same with rotation
-                    rotated_block_possible_connection= Direction.rotate(initial_block_possible_connection, block.right_rotations)
+                    rotated_block_possible_connection = Direction.rotate(initial_block_possible_connection, block.right_rotations)
                     if not (
                         initial_block_possible_connection in block.inputs + block.outputs
                     ): continue
