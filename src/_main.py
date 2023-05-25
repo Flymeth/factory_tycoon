@@ -9,8 +9,20 @@ from typing import Callable, Any, Self
 import pygame as pg
 from camera import Camera
 from textures import create_surface
+from custom_events_identifier import *
 
 DEV_MODE= True
+
+class TimeInformation():
+    def __init__(self, time: int, possible_difference: int):
+        self.time= {
+            "ms": time,
+            "s": time / 1000,
+            "m": time / (1000 * 60),
+            "h": time / (1000 * 60^2),
+            "d": time / (1000 * 60^2 * 24)
+        }
+        self.approximated_at= possible_difference
 
 class Modules:
     blocks= blocks
@@ -41,13 +53,13 @@ class Pygame():
         self.dt = 0
         self.ticks= 0
     def next_tick(self) -> float:
-        self.dt = self.clock.tick(self.fps)/ 1000
+        self.dt = self.clock.tick(self.fps)
         self.ticks+= 1
         return self.dt
 
 class Game:
     Modules= Modules
-    def __init__(self, player_name: str, max_fps= 144) -> None:
+    def __init__(self, player_name: str, max_fps= 60) -> None:
         self.pygame= Pygame(max_fps)
         self.next_event_id= 0
         self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
@@ -66,18 +78,28 @@ class Game:
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []
+        self.__last_tick: int= 0
         pass
+    @property
+    def time_infos(self) -> TimeInformation:
+        """ Get time informations since the pygame.init() has been fired (= since the game started)
+        """
+        time= pg.time.get_ticks()
+        possible_difference= time - self.__last_tick
+        self.__last_tick= time
+        return TimeInformation(time, possible_difference)
     def start(self):
         """ Starts the game
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
+        pg.time.set_timer(EACH_MS_EVENT, pg.TIMER_RESOLUTION or 1)
         while 1:
             self.cam.draw()
             pg.display.update()
 
             for event in self.pygame.app.event.get():
                 self.fire_event(event.type, event)
-            self.fire_event("tick", pg.event.Event(-1, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
+            self.fire_event(TICK_EVENT, pg.event.Event(TICK_EVENT, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
             if not self.running: break
 
             self.pygame.next_tick()

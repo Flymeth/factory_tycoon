@@ -3,6 +3,7 @@ from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
 from random import choice
+from custom_events_identifier import *
 
 class Map:
     def __init__(self, game, init_block: Block, auto_generate_chunks= True) -> None:
@@ -11,50 +12,44 @@ class Map:
         self.game: Game= game
         self.matrice= [[init_block]]
         self.__center= 0, 0 # Les coordonnées du centre du monde
-        self.ev= self.game.add_event("tick", lambda g, e: self.update())
+        self.game.add_event(TICK_EVENT, lambda g, e: self.update())
         if auto_generate_chunks:
-            self.game.add_event("tick", lambda g, e: self.check_and_generate_chunks())
+            self.game.add_event(TICK_EVENT, lambda g, e: self.check_and_generate_chunks())
         pass
     def update(self):
         """ Update the map's block
         """
         assert self.game, "Game object is required to use this function"
-        tick= self.game.pygame.ticks
-        if not tick: return
-
+        time_infos= self.game.time_infos
         blocks = self.flatten()
-        #! IDK why but the `blocks` array becomes empty when the user is clicking the on screen
         # Updating each blocks (if required)
         [
             block.exec()
             for block in blocks
-            if not tick%block.update_interval
+            if time_infos.time["ms"]%block.update_interval <= time_infos.approximated_at
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
-            if not tick%block.update_interval:
-                if type(block) == Generator:
-                    pass
-                if block.processed_items and block.outputs and block.connected["out"]:
-                    valid_outputs_indexes: list[int]= []
-                    if type(block.next_item_output) == Direction.single:
-                        if not (block.next_item_output in block.outputs): continue
-                        valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
-                    else:
-                        for direction in block.next_item_output:
-                            if not direction in block.outputs: continue
-                            valid_outputs_indexes.append(block.outputs.index(direction))
-                    if not valid_outputs_indexes: continue
-                    
-                    valid_blocks= [
-                        out_block
-                        for index, out_block in block.connected["out"]
-                        if index in valid_outputs_indexes
-                    ]
-                    if not valid_blocks: continue
-                    out_block= choice(valid_blocks)
-                    out_block.processing_items.append(block.processed_items.pop(0))
-
+            if block.processed_items and block.connected["out"]:
+                valid_outputs_indexes: list[int]= []
+                if type(block.next_item_output) == Direction.single:
+                    if not (block.next_item_output in block.outputs): continue
+                    valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
+                else:
+                    for direction in block.next_item_output:
+                        if not direction in block.outputs: continue
+                        valid_outputs_indexes.append(block.outputs.index(direction))
+                if not valid_outputs_indexes: continue
+                
+                valid_blocks= [
+                    out_block
+                    for index, out_block in block.connected["out"]
+                    if index in valid_outputs_indexes
+                ]
+                if not valid_blocks: continue
+                out_block= choice(valid_blocks)
+                out_block.processing_items.append(block.processed_items.pop(0))
+        
     def check_and_generate_chunks(self):
         assert self.game, "Cannot check and generate chunks automatically without the game object"
         extremities= {

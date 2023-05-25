@@ -6,7 +6,7 @@ from pygame import transform, display, Surface
 from font import TEXT_FONT, TITLE_FONT
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 15) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000) -> None:
         from items import Item
         from _main import Game
 
@@ -47,7 +47,7 @@ class Block:
         self.processed_items: list[Item] = []
         self.next_item_output: Direction.typeof = Direction.fast("a") # Si la sortie du prochain item doit être choisie, sinon cela prendre une sortie au hazard parmis la liste des sorties
         self.block_bellow: Block | None= None
-        self.update_interval: int = update_each
+        self.update_interval: int = update_each # in miliseconds
         pass
     @property
     def texture(self) -> Surface:

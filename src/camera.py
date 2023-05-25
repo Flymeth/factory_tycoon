@@ -1,6 +1,7 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event, display, KEYDOWN, KEYUP, K_UP, K_DOWN, K_RIGHT, K_LEFT, K_KP_PLUS, K_KP_MINUS
 from font import TEXT_FONT
 from math import ceil
+from custom_events_identifier import TICK_EVENT
 
 ZOOM_SPEED: int= 5
 MOVING_BUTTON_ID: int= 2 # 2 = wheel_button
@@ -36,7 +37,7 @@ class Camera():
         self.moving_camera= False
         self.game.add_event(MOUSEBUTTONUP, lambda g,e: self.handle_mouse_pressures(e.button, False))
         self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.handle_mouse_pressures(e.button, True))
-        self.game.add_event("tick", lambda g,e: self.handle_camera_movements())
+        self.game.add_event(TICK_EVENT, lambda g,e: self.handle_camera_movements())
         self.game.add_event(MOUSEWHEEL, lambda g,e: self.handle_camera_zoom(e.y))
 
         self.key_movements= {
