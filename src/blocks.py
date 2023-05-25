@@ -125,7 +125,7 @@ class Generator(Block):
         self.others: list[type[Item]]= [Stone]
         self.spawn_chance= ingot_spawn_chance
     def exec(self):
-        if self.processed_items: return
+        if len(self.processed_items) > 2: return
         self.processed_items.append(
             (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
             (self.game) # Et ici on instancie cette classe
@@ -203,6 +203,17 @@ class MineBlock(FloorBlock):
     def __init__(self, game, mine_type: Item) -> None:
         super().__init__(game, "mine", "mine")
         self.ressource= mine_type
+    def postprocessing(self, texture: Surface) -> Surface:
+        ressource_texture= self.ressource
+        texture_size= texture.get_size()[0]
+        ressource_texture_size= texture_size /2
+        
+        ingot_texture_pos= (texture_size - ressource_texture_size) /2
+        texture.blit(
+            transform.scale(ressource_texture, [ressource_texture_size] *2),
+            [ingot_texture_pos] *2
+        )
+        return texture
 
 if __name__ == "__main__":
     t=Trash(None)

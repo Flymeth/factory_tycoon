@@ -1,4 +1,4 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Convoyer
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
@@ -30,6 +30,8 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
+            if type(block) == Convoyer:
+                pass
             if block.processed_items and block.connected["out"]:
                 valid_outputs_indexes: list[int]= []
                 if type(block.next_item_output) == Direction.single:
@@ -184,44 +186,35 @@ class Map:
                     side_block= self.matrice[side_x][side_y]
                     if isinstance(side_block, FloorBlock): continue
 
-                    # Sided_block connection side (without any rotation)
-                    initial_sided_possible_connection= \
-                        Direction.North if overflow_y == -1 else \
-                        Direction.South if overflow_y == 1 else \
-                        Direction.East if overflow_x == -1 else Direction.West
-                    # Same with rotation
-                    rotated_sided_possible_connection= Direction.rotate(initial_sided_possible_connection, side_block.right_rotations)
-                    if not (
-                        initial_sided_possible_connection in side_block.inputs + side_block.outputs
-                    ): continue
+                    block_possible_connection= \
+                        Direction.North if overflow_y == 1 else \
+                        Direction.South if overflow_y == -1 else \
+                        Direction.West if overflow_x == -1 else Direction.East
+                    # Now we calculate the connection without any rotation
+                    vanilla_block_possible_connection= Direction.rotate(block_possible_connection, times_rotating_left= block.right_rotations)
+                    if not vanilla_block_possible_connection in block.inputs + block.outputs: continue
+                    
+                    # We do the same thing for the sided block
+                    side_block_possible_connection= (block_possible_connection +2) %4
+                    vanilla_side_block_possible_connection= Direction.rotate(side_block_possible_connection, times_rotating_left= side_block.right_rotations)
+                    if not vanilla_side_block_possible_connection in side_block.inputs + side_block.outputs: continue
 
-                    # Block connection side (without any rotation)
-                    initial_block_possible_connection= (initial_sided_possible_connection +2) %4
-                    # Same with rotation
-                    rotated_block_possible_connection = Direction.rotate(initial_block_possible_connection, block.right_rotations)
-                    if not (
-                        initial_block_possible_connection in block.inputs + block.outputs
-                    ): continue
-
-                    expected_rotated_sided_connection= (rotated_block_possible_connection +2) %4
-                    if (expected_rotated_sided_connection == rotated_sided_possible_connection
-                        and ((
-                            initial_sided_possible_connection in side_block.inputs
-                            and initial_block_possible_connection in block.outputs
-                        )or (
-                            initial_sided_possible_connection in side_block.outputs
-                            and initial_block_possible_connection in block.inputs
-                        )
-                    )):
+                    if (
+                        vanilla_side_block_possible_connection in side_block.inputs
+                        and vanilla_block_possible_connection in block.outputs
+                    ) or (
+                        vanilla_side_block_possible_connection in side_block.outputs
+                        and vanilla_block_possible_connection in block.inputs
+                    ):
                         receiver, sender = (
                             (block, side_block) 
-                            if initial_block_possible_connection in block.inputs
+                            if vanilla_block_possible_connection in block.inputs
                             else (side_block, block)
                         )
                         receiver_connection, sender_connection= (
-                            (initial_block_possible_connection, initial_sided_possible_connection)
+                            (vanilla_block_possible_connection, vanilla_side_block_possible_connection)
                             if receiver == block
-                            else (initial_sided_possible_connection, initial_block_possible_connection)
+                            else (vanilla_side_block_possible_connection, vanilla_block_possible_connection)
                         )
 
                         # Get input/output connection index

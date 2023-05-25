@@ -23,6 +23,9 @@ class TimeInformation():
             "d": time / (1000 * 60^2 * 24)
         }
         self.approximated_at= possible_difference
+    def __str__(self) -> str:
+        approximation= int(self.approximated_at/2)
+        return f"TIME<{round(self.time['s'] + approximation/1000, 3)}ms (+/- {approximation}ms)>"
 
 class Modules:
     blocks= blocks
@@ -59,7 +62,7 @@ class Pygame():
 
 class Game:
     Modules= Modules
-    def __init__(self, player_name: str, max_fps= 60) -> None:
+    def __init__(self, player_name: str, max_fps= 80) -> None:
         self.pygame= Pygame(max_fps)
         self.next_event_id= 0
         self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
