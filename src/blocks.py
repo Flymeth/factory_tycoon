@@ -1,5 +1,5 @@
 from direction_sys import Direction
-from items import Item, Stone
+from items import Item, Stone, GoldIngot
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface
@@ -163,7 +163,7 @@ class Sorter(Block):
         super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
         self.valid= valid_items
     def exec(self):
-        if not self.processing_items: return
+        if not (self.processing_items or self.processed_items): return
 
         item = self.processing_items.pop(0)
         if not self.valid or item in self.valid:
@@ -172,7 +172,12 @@ class Sorter(Block):
             self.next_item_output = Direction.fast("e")
         self.processed_items.append(item)
     def edit(self) -> bool:
-        selector= Selector(self.game, [Stone(self.game)], True)
+        from items import GoldIngot, Stone, DiamondIngot, IronIngot
+        valid_items = [
+            Instance(self.game)
+            for Instance in (GoldIngot, Stone, DiamondIngot, IronIngot)
+        ]
+        selector= Selector(self.game, valid_items, freeze_game= True)
         item= selector.get()
         if isinstance(item, Item):
             self.valid= [item]
@@ -209,11 +214,11 @@ class EmptyBlock(FloorBlock):
         super().__init__(game, identifier="empty", texture="empty")
         pass
 class MineBlock(FloorBlock):
-    def __init__(self, game, mine_type: Item) -> None:
+    def __init__(self, game, mine_type: type[Item]) -> None:
         super().__init__(game, "mine", "mine")
         self.ressource= mine_type
     def postprocessing(self, texture: Surface) -> Surface:
-        ressource_texture= self.ressource
+        ressource_texture= self.ressource(self.game).texture
         texture_size= texture.get_size()[0]
         ressource_texture_size= texture_size /2
         

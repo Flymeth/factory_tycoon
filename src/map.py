@@ -1,8 +1,8 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Sorter
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Sorter, GoldIngot
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
-from random import choice
+from random import choice, random
 from custom_events_identifier import *
 
 class Map:
@@ -116,7 +116,9 @@ class Map:
     def create_chuck(self, width: int, height: int) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
-        return [[EmptyBlock(self.game) for y in range(height)] for x in range(width)]
+        generate_mine = random() <= .2
+
+        return [[MineBlock(self.game, GoldIngot) if generate_mine else EmptyBlock(self.game) for y in range(height)] for x in range(width)]
     def generate_chunks(self, direction: Direction.typeof= Direction.fast(), size= 20) -> tuple[list[list[Block]]]:
         """ Creates chunks in different directions and add them directly to the map
             Returns a tuple containing the created chunks in order of the given directions orders
@@ -173,7 +175,7 @@ class Map:
         actual_block= self.matrice[x][y]
         assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
         if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
-            assert isinstance(block.extracts, type(actual_block.ressource)), "Tried to place a generator on an invalid mine"
+            block.extracts= actual_block.ressource
         block.block_bellow= actual_block
         self.matrice[x][y]= block
 

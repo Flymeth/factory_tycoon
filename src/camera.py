@@ -54,14 +54,16 @@ class Camera():
         ]
         self.freeze_position= False
         self.freeze_zoom= False
+        self.mouse_position_before_cam_movement= None
     @property
     def screen_center(self):
         return [size /2 for size in display.get_window_size()]
     def handle_mouse_pressures(self, button: int, is_pressed: bool):
-        self.moving_camera= is_pressed and button == MOVING_BUTTON_ID
+        self.moving_camera= is_pressed and button == MOVING_BUTTON_ID and not self.freeze_position
         if self.moving_camera: mouse.get_rel()
-        elif not is_pressed and button == MOVING_BUTTON_ID:
-            mouse.set_pos(self.screen_center)
+        elif not is_pressed and button == MOVING_BUTTON_ID and self.mouse_position_before_cam_movement:
+            mouse.set_pos(self.mouse_position_before_cam_movement)
+            self.mouse_position_before_cam_movement= None
     def key_down(self, key: int):
         if key in directions_keys:
             self.key_movements["position"].append(directions_keys[key])
@@ -75,6 +77,7 @@ class Camera():
     def handle_camera_movements(self):
         mouse.set_visible(not self.moving_camera)
         event.set_grab(self.moving_camera)
+
         if self.key_movements["zoom"]:
             self.handle_camera_zoom(self.key_movements["zoom"])
 
@@ -89,6 +92,9 @@ class Camera():
                 self.position[1] + direction[1] * torc
             )
         elif self.moving_camera:
+            if not self.mouse_position_before_cam_movement:
+                self.mouse_position_before_cam_movement= mouse.get_pos()
+
             rel= list(mouse.get_rel())
             rel[1]*= -1
             self.set_camera_position(
