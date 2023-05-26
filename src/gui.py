@@ -1,12 +1,13 @@
-from blocks import Block
-from pygame import surface, display, transform
+from pygame import surface, display, transform, MOUSEBUTTONDOWN
+from typing import Any
 
 class InventoryBar():
-    def __init__(self, game, content: list[Block] = []) -> None:
+    def __init__(self, game, content: list[Any] = []) -> None:
         from _main import Game
+        from blocks import Block
 
         self.game: Game= game
-        self.content= content
+        self.content: list[Block]= content
         self.selected: int = -1
         self.items_size= 50
         self.paddings= 5
@@ -58,3 +59,34 @@ class InventoryBar():
             gui.blit(texture, (x, y))
 
         self.game.pygame.screen.blit(gui, rect["position"])
+
+class Selector():
+    def __init__(self, game, choices: list[Any], freeze_game= False) -> None:
+        from _main import Game
+        from items import Item
+        from blocks import Block
+
+        self.game: Game= game
+        self.choices= choices
+        self.choosed: Block | Item | None= None
+        self.scrollDown= 0
+
+        if freeze_game:
+            self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = True
+        self.active= False
+
+        self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked())
+        pass
+    def update(self):
+        
+        pass
+    def clicked(self):
+        if not self.active: return
+        self.choosed= self.choices[0]
+    def get(self) -> Any | None:
+        self.active= True
+        while not (self.choosed or self.game.update()):
+            self.update()
+        return self.choosed
+    def unfreeze(self):
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = False

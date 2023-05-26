@@ -2,11 +2,12 @@ from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator
 from items import Item
 from gui import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r
+from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r, K_e
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 fast_edit_key= K_a
 rotate_key= K_r
+edit_key= K_e
 
 class Player:
     def __init__(self, game, name: str, default_credits= 0, default_quests: list[Quest]= []) -> None:
@@ -44,6 +45,8 @@ class Player:
         if key == fast_edit_key:
             if not  getattr(block, "fast_edit", False): return
             actualisation_required= block.fast_edit()
+        elif key == edit_key:
+            actualisation_required= block.edit()
         elif key == rotate_key:
             if block.rotable:
                 block.right_rotations= (block.right_rotations +1)% 4

@@ -3,7 +3,7 @@ from items import Item, Stone
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface
-from font import TEXT_FONT, TITLE_FONT
+from gui import Selector
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000) -> None:
@@ -81,6 +81,7 @@ class Block:
         self.game.pygame.screen.blit(self.postprocessing(texture), (x, y))
         return True
     def exec(self): pass
+    def edit(self) -> bool: pass
     def fast_edit(self) -> bool: pass
     def postprocessing(self, texture: Surface) -> Surface: return texture
     def __str__(self) -> str:
@@ -162,12 +163,20 @@ class Sorter(Block):
         super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
         self.valid= valid_items
     def exec(self):
+        if not self.processing_items: return
+
         item = self.processing_items.pop(0)
         if not self.valid or item in self.valid:
             self.next_item_output = Direction.fast("s")
         else:
             self.next_item_output = Direction.fast("e")
         self.processed_items.append(item)
+    def edit(self) -> bool:
+        selector= Selector(self.game, [Stone(self.game)], True)
+        item= selector.get()
+        if type(item) != Item: return False
+        self.valid= [item]
+        return False
 
 class Convoyer(Block):
     def __init__(self, game) -> None:

@@ -69,6 +69,8 @@ class Game:
         self.running= True
         self.DEV_MODE= DEV_MODE
         self.quests: list[quests.Quest]= []
+        self.freeze_process= False
+
         for key in dir(quests):
             Q= getattr(quests, key)
             if type(Q) == type(quests.Quest) and Q != quests.Quest:
@@ -95,17 +97,22 @@ class Game:
         """ Starts the game
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
-        pg.time.set_timer(EACH_MS_EVENT, pg.TIMER_RESOLUTION or 1)
-        while 1:
-            self.cam.draw()
-            pg.display.update()
+        pg.time.set_timer(PROCESS_EVENT, pg.TIMER_RESOLUTION or 1)
+        while not self.update(): pass
 
-            for event in self.pygame.app.event.get():
-                self.fire_event(event.type, event)
-            self.fire_event(TICK_EVENT, pg.event.Event(TICK_EVENT, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
-            if not self.running: break
+    def update(self) -> bool:
+        """ Make a game update
+            Returns if the program should stop
+        """
+        pg.display.update()
 
-            self.pygame.next_tick()
+        for event in self.pygame.app.event.get():
+            self.fire_event(event.type, event)
+        self.fire_event(DRAW_EVENT, pg.event.Event(DRAW_EVENT, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
+        if not self.running: return True
+
+        self.pygame.next_tick()
+        return False
     def quit(self):
         """ Quits and close the game
         """

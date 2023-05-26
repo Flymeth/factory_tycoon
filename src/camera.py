@@ -1,7 +1,7 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event, display, KEYDOWN, KEYUP, K_UP, K_DOWN, K_RIGHT, K_LEFT, K_KP_PLUS, K_KP_MINUS
 from font import TEXT_FONT
 from math import ceil
-from custom_events_identifier import TICK_EVENT
+from custom_events_identifier import TICK_EVENT, DRAW_EVENT
 
 ZOOM_SPEED: int= 5
 MOVING_BUTTON_ID: int= 2 # 2 = wheel_button
@@ -38,6 +38,7 @@ class Camera():
         self.game.add_event(MOUSEBUTTONUP, lambda g,e: self.handle_mouse_pressures(e.button, False))
         self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.handle_mouse_pressures(e.button, True))
         self.game.add_event(TICK_EVENT, lambda g,e: self.handle_camera_movements())
+        self.game.add_event(DRAW_EVENT, lambda g,e: self.draw())
         self.game.add_event(MOUSEWHEEL, lambda g,e: self.handle_camera_zoom(e.y))
 
         self.key_movements= {
@@ -51,10 +52,14 @@ class Camera():
             (-500, 500),
             (-500, 500)
         ]
+        self.freeze_position= False
+        self.freeze_zoom= False
+        self.freeze_handlers = False
     @property
     def screen_center(self):
         return [size /2 for size in display.get_window_size()]
     def handle_mouse_pressures(self, button: int, is_pressed: bool):
+        if self.freeze_handlers: return
         self.moving_camera= is_pressed and button == MOVING_BUTTON_ID
         if self.moving_camera: mouse.get_rel()
         elif not is_pressed and button == MOVING_BUTTON_ID:
@@ -93,6 +98,7 @@ class Camera():
                 self.position[1] - rel[1]
             )
     def set_camera_position(self, x: float, y: float):
+        if self.freeze_position: return
         self.position= [
             min(self.min_max_position[i][1], max(self.min_max_position[i][0], (x, y)[i]))
             for i in range(2)
@@ -100,6 +106,7 @@ class Camera():
         if self.game.DEV_MODE:
             print(f"SET POSITION TO: {self.position}")
     def set_camera_zoom(self, new_zoom: float):
+        if self.freeze_zoom: return
         self.zoom= min(self.min_max_zoom[1], max(self.min_max_zoom[0], new_zoom))
         if self.game.DEV_MODE:
             print(f"SET ZOOM TO: {self.zoom}px")
@@ -111,7 +118,6 @@ class Camera():
         screen_size= display.get_window_size()
         coordonates= coordonates[0], coordonates[1]*-1 # Because for the screen, go upper means to decrease the y axis
         position = self.position[0], self.position[1]*-1
-
         x, y= [
             (coordonates[i] - position[i]/100) * self.zoom
             + (screen_size[i] - self.zoom)/2

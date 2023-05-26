@@ -1,4 +1,4 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Convoyer
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Sorter
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
@@ -12,9 +12,9 @@ class Map:
         self.game: Game= game
         self.matrice= [[init_block]]
         self.__center= 0, 0 # Les coordonnées du centre du monde
-        self.game.add_event(TICK_EVENT, lambda g, e: self.update())
+        self.game.add_event(PROCESS_EVENT, lambda g, e: self.update())
         if auto_generate_chunks:
-            self.game.add_event(TICK_EVENT, lambda g, e: self.check_and_generate_chunks())
+            self.game.add_event(PROCESS_EVENT, lambda g, e: self.check_and_generate_chunks())
         pass
     def update(self):
         """ Update the map's block
@@ -30,7 +30,7 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
-            if type(block) == Convoyer:
+            if type(block) == Sorter:
                 pass
             if block.processed_items and block.connected["out"]:
                 valid_outputs_indexes: list[int]= []
