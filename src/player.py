@@ -25,6 +25,7 @@ class Player:
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
         self.game.add_event(KEYDOWN, lambda g, e: self.key_pressed(e.key))
+        self.freeze_blocks_interaction= False
         pass
     def gain(self, amount: float) -> float:
         self.credits+= amount
@@ -38,6 +39,7 @@ class Player:
                 print(f"ITEM INDEX SET TO {index}.")
             return
         
+        if self.freeze_blocks_interaction: return
         cursor= self.game.cam.get_cursor_coordonates()
         block = self.game.map.get_block(*cursor)
         if not block: return
@@ -55,6 +57,7 @@ class Player:
             self.game.map.actualize(cursor)
     def clicked(self, button: int):
         if not button in (1, 3): return # 1 = left click; 3 = right click
+        if self.freeze_blocks_interaction: return
         mouse_position= mouse.get_pos()
         navbar_rect= self.inventory_bar.get_rect()
         if self.game.DEV_MODE:

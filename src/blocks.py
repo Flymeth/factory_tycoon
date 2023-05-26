@@ -174,8 +174,8 @@ class Sorter(Block):
     def edit(self) -> bool:
         selector= Selector(self.game, [Stone(self.game)], True)
         item= selector.get()
-        if type(item) != Item: return False
-        self.valid= [item]
+        if isinstance(item, Item):
+            self.valid= [item]
         return False
 
 class Convoyer(Block):

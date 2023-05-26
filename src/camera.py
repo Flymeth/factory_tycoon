@@ -54,12 +54,10 @@ class Camera():
         ]
         self.freeze_position= False
         self.freeze_zoom= False
-        self.freeze_handlers = False
     @property
     def screen_center(self):
         return [size /2 for size in display.get_window_size()]
     def handle_mouse_pressures(self, button: int, is_pressed: bool):
-        if self.freeze_handlers: return
         self.moving_camera= is_pressed and button == MOVING_BUTTON_ID
         if self.moving_camera: mouse.get_rel()
         elif not is_pressed and button == MOVING_BUTTON_ID:

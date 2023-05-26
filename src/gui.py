@@ -71,8 +71,8 @@ class Selector():
         self.choosed: Block | Item | None= None
         self.scrollDown= 0
 
-        if freeze_game:
-            self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = True
+        self.game.player.freeze_blocks_interaction = True
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = freeze_game
         self.active= False
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked())
@@ -87,6 +87,7 @@ class Selector():
         self.active= True
         while not (self.choosed or self.game.update()):
             self.update()
+        self.unfreeze()
         return self.choosed
     def unfreeze(self):
-        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = False
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = False
