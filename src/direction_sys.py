@@ -60,7 +60,7 @@ class Direction:
         else:
             return {
                 "a": lambda: Direction.fast("nesw"),
-                "h": lambda: Direction.fast("ew"),
+                "h": lambda: Direction.fast("we"),
                 "v": lambda: Direction.fast("ns"),
                 "x": lambda: Direction.fast("")
             }[direction]()

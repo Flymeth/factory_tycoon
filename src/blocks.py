@@ -53,12 +53,12 @@ class Block:
     def texture(self) -> Surface:
         return self._texture if type(self._texture) == Surface else get_texture("blocks", self._texture)
     @property
-    def coordonates(self) -> tuple[int, int]:
+    def coordonates(self) -> tuple[int, int] | None:
         """ Returns the block coordonates
         """
         assert self.game, "Cannot calculate position without the game object"
         found= self.game.map.find_blocks(lambda block: block == self)
-        assert len(found) == 1, "Block isn't in the map or has been added twice"
+        if not len(found) == 1: return None
         return found[0][0]
     def draw(self):
         """ Tries to draw the block and returns if False if the block has not been drawed, else returns True
@@ -99,8 +99,9 @@ class Seller(Block):
             self.processing_items.pop(0)
             self.game.player.selled.append(item)
             
-            item_value= item.value * (self.game.marked.courts.get(item.name) or 1)
+            item_value= item.value * self.game.marked.get_court(item)
             self.game.player.gain(item_value)
+            self.game.marked.selled(item)
         else:
             self.requires_maintenance= True
 class GlobalSeller(Seller):
@@ -121,16 +122,18 @@ class Generator(Block):
         assert 0 <= ingot_spawn_chance <= 1, "Spawn change must be between 0 and 1 included"
         super().__init__(game, "generator", outputs= Direction.fast("a"), texture= "generator", rotable= False)
 
-        self.ingot_texture= ingot_type(game).texture
-        self.extracts = ingot_type
         self.others: list[type[Item]]= [Stone]
         self.spawn_chance= ingot_spawn_chance
+        self.change_extractor(ingot_type)
     def exec(self):
         if len(self.processed_items) > 2: return
         self.processed_items.append(
             (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
             (self.game) # Et ici on instancie cette classe
         )
+    def change_extractor(self, ingot_type: type[Item]):
+        self.ingot_texture= ingot_type(self.game).texture
+        self.extracts = ingot_type
     def postprocessing(self, texture: Surface) -> Surface:
         ingot_texture= self.ingot_texture
         texture_size= texture.get_size()[0]
@@ -163,10 +166,15 @@ class Sorter(Block):
         super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
         self.valid= valid_items
     def exec(self):
-        if not (self.processing_items or self.processed_items): return
+        if not self.processing_items or self.processed_items: return
 
         item = self.processing_items.pop(0)
-        if not self.valid or item in self.valid:
+        is_valid_item= not bool(self.valid) # = If the valid list is empty, the given item is set as valid
+        for element in self.valid:
+            if isinstance(item, element.__class__):
+                is_valid_item= True
+                break
+        if is_valid_item:
             self.next_item_output = Direction.fast("s")
         else:
             self.next_item_output = Direction.fast("e")
@@ -204,6 +212,26 @@ class Convoyer(Block):
     def exec(self):
         if not self.processing_items: return
         self.processed_items.append(self.processing_items.pop(0))
+
+class Viewer(Block):
+    def __init__(self, game) -> None:
+        super().__init__(game, "viewer", inputs= Direction.fast("n"), outputs = Direction.fast("s"), decorative= True)
+    def exec(self):
+        if not self.processing_items: return
+        self.processed_items.append(self.processing_items.pop(0))
+    def postprocessing(self, texture: Surface) -> Surface:
+        if not self.processing_items: return texture
+
+        ingot_texture= self.processing_items[0].texture
+        texture_size= texture.get_size()[0]
+        ingot_texture_size= texture_size /2
+        
+        ingot_texture_pos= (texture_size - ingot_texture_size) /2
+        texture.blit(
+            transform.scale(ingot_texture, [ingot_texture_size] *2),
+            [ingot_texture_pos] *2
+        )
+        return texture
 
 class FloorBlock(Block):
     def __init__(self, game, identifier: str, texture="default_floor_texture") -> None:

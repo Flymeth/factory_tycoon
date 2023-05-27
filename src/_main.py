@@ -22,6 +22,17 @@ class TimeInformation():
             "h": time / (1000 * 60^2),
             "d": time / (1000 * 60^2 * 24)
         }
+        """
+            ```py
+                {
+                    "ms":  int, # Time in miliseconds
+                    "s": float, # Time in seconds
+                    "m": float, # Time in minutes
+                    "h": float, # Time in hours
+                    "d": float, # Time in days
+                }
+            ```
+        """
         self.approximated_at= possible_difference
     def __str__(self) -> str:
         approximation= int(self.approximated_at/2)

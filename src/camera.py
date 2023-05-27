@@ -1,6 +1,6 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event, display, KEYDOWN, KEYUP, K_UP, K_DOWN, K_RIGHT, K_LEFT, K_KP_PLUS, K_KP_MINUS
 from font import TEXT_FONT
-from math import ceil
+from math import ceil, floor
 from custom_events_identifier import TICK_EVENT, DRAW_EVENT
 
 ZOOM_SPEED: int= 5
@@ -167,7 +167,7 @@ class Camera():
         self.game.pygame.screen.fill(colordict.THECOLORS["gray20"])
         center_x, center_y= self.get_screen_center_coordonates()
         screen_w, screen_h= display.get_window_size()
-        max_fittable_blocks= ceil(screen_w /self.zoom) +2, ceil(screen_h /self.zoom) +2
+        max_fittable_blocks= ceil(screen_w /self.zoom), ceil(screen_h /self.zoom)
         ranges= {
             "x": [
                 int(
@@ -192,7 +192,6 @@ class Camera():
             for y in range(*ranges["y"]):
                 if draw_block(x, y):
                     drawed+= 1
-        
         self.game.player.inventory_bar.draw()
         if self.game.DEV_MODE:
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))

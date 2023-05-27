@@ -1,4 +1,4 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Sorter, GoldIngot
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldIngot
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
@@ -10,18 +10,23 @@ class Map:
         from _main import Game
 
         self.game: Game= game
-        self.matrice= [[init_block]]
+        self.requires_processing: list[Block]= []
+        self.matrice= [[FloorBlock(game, "first_block")]]
+
         self.__center= 0, 0 # Les coordonnées du centre du monde
         self.game.add_event(PROCESS_EVENT, lambda g, e: self.update())
         if auto_generate_chunks:
             self.game.add_event(PROCESS_EVENT, lambda g, e: self.check_and_generate_chunks())
+        
+        self.place(init_block, (0, 0))
         pass
     def update(self):
         """ Update the map's block
         """
         assert self.game, "Game object is required to use this function"
+        if not self.requires_processing: return
         time_infos= self.game.time_infos
-        blocks = self.flatten()
+        blocks = self.requires_processing
         # Updating each blocks (if required)
         [
             block.exec()
@@ -30,8 +35,6 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
-            if type(block) == Sorter:
-                pass
             if block.processed_items and block.connected["out"]:
                 valid_outputs_indexes: list[int]= []
                 if type(block.next_item_output) == Direction.single:
@@ -116,9 +119,11 @@ class Map:
     def create_chuck(self, width: int, height: int) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
-        generate_mine = random() <= .2
+        generate_mines = random() <= .2
 
-        return [[MineBlock(self.game, GoldIngot) if generate_mine else EmptyBlock(self.game) for y in range(height)] for x in range(width)]
+        return [[
+            MineBlock(self.game, GoldIngot) if generate_mines and random() <= .5 else EmptyBlock(self.game) 
+        for y in range(height)] for x in range(width)]
     def generate_chunks(self, direction: Direction.typeof= Direction.fast(), size= 20) -> tuple[list[list[Block]]]:
         """ Creates chunks in different directions and add them directly to the map
             Returns a tuple containing the created chunks in order of the given directions orders
@@ -155,6 +160,12 @@ class Map:
 
             generated.append(chunck)
         return tuple(generated)
+    def is_valid_coordonates(self, x: int, y: int):
+        try:
+            self.__generic_coordonates_to_matrice_coordonate__(x, y)
+            return True
+        except AssertionError:
+            return False
     def actualize(self, coordonates: tuple[int, int]):
         """ Actualize the block for properties that need to be matched with blocks around
         """
@@ -175,15 +186,19 @@ class Map:
         actual_block= self.matrice[x][y]
         assert isinstance(actual_block, FloorBlock), "Tried to place a block above another"
         if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
-            block.extracts= actual_block.ressource
+            block.change_extractor(actual_block.ressource)
         block.block_bellow= actual_block
         self.matrice[x][y]= block
+        self.requires_processing.append(block)
 
         # Connect block with sided ones #
         for overflow_x in range(-1, 2):
             for overflow_y in range(-1, 2):
                 if bool(overflow_x) == bool(overflow_y): continue # On ne check ni la diagonale, ni le block en question
-                side_x, side_y= self.__generic_coordonates_to_matrice_coordonate__(coordonates[0] + overflow_x, coordonates[1] + overflow_y)
+                side_position= coordonates[0] + overflow_x, coordonates[1] + overflow_y
+                if not self.is_valid_coordonates(*side_position): continue
+                
+                side_x, side_y= self.__generic_coordonates_to_matrice_coordonate__(*side_position)
                 if 0 <= side_x <= self.width and 0 <= side_y <= self.height:
                     side_block= self.matrice[side_x][side_y]
                     if isinstance(side_block, FloorBlock): continue
@@ -240,6 +255,8 @@ class Map:
         x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
         assert not isinstance(self.matrice[x][y], FloorBlock), "Tried to delete the floor"
         deleted = self.matrice[x][y]
+        if deleted in self.requires_processing:
+            self.requires_processing.remove(deleted)
 
         # Remove connections
         for connection_in, block in deleted.connected["in"]:
