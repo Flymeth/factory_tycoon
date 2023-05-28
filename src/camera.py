@@ -49,8 +49,8 @@ class Camera():
         self.game.add_event(KEYUP, lambda g, e: self.key_up(e.key))
         self.min_max_zoom= (50, 200)
         self.min_max_position= [
-            (-500, 500),
-            (-500, 500)
+            (-1000, 1000),
+            (-1000, 1000)
         ]
         self.freeze_position= False
         self.freeze_zoom= False
@@ -167,7 +167,7 @@ class Camera():
         self.game.pygame.screen.fill(colordict.THECOLORS["gray20"])
         center_x, center_y= self.get_screen_center_coordonates()
         screen_w, screen_h= display.get_window_size()
-        max_fittable_blocks= ceil(screen_w /self.zoom), ceil(screen_h /self.zoom)
+        max_fittable_blocks= ceil(screen_w /self.zoom) +1, ceil(screen_h /self.zoom) +1
         ranges= {
             "x": [
                 int(

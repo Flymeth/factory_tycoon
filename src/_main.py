@@ -73,7 +73,7 @@ class Pygame():
 
 class Game:
     Modules= Modules
-    def __init__(self, player_name: str, max_fps= 80) -> None:
+    def __init__(self, player_name: str, max_fps= 144) -> None:
         self.pygame= Pygame(max_fps)
         self.next_event_id= 0
         self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
@@ -88,9 +88,7 @@ class Game:
                 self.quests.insert(0, Q(self))
         self.cam= Camera(self)
 
-        init_block = blocks.Trash(self)
-        init_block.block_bellow = init_block
-        self.map= map.Map(self, init_block= init_block)
+        self.map= map.Map(self)
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []

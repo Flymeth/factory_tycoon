@@ -48,6 +48,7 @@ class Block:
         self.next_item_output: Direction.typeof = Direction.fast("a") # Si la sortie du prochain item doit être choisie, sinon cela prendre une sortie au hazard parmis la liste des sorties
         self.block_bellow: Block | None= None
         self.update_interval: int = update_each # in miliseconds
+        self._cache_coordonates: tuple[int, int] | None= None
         pass
     @property
     def texture(self) -> Surface:
@@ -57,9 +58,12 @@ class Block:
         """ Returns the block coordonates
         """
         assert self.game, "Cannot calculate position without the game object"
+        if self._cache_coordonates: return self._cache_coordonates
         found= self.game.map.find_blocks(lambda block: block == self)
         if not len(found) == 1: return None
-        return found[0][0]
+        coordonates= found[0][0]
+        self._cache_coordonates= coordonates
+        return coordonates
     def draw(self):
         """ Tries to draw the block and returns if False if the block has not been drawed, else returns True
         """

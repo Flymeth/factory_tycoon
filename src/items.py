@@ -24,7 +24,7 @@ class Item:
 class DiamondIngot(Item):
     def __init__(self, game):
         from blocks import DiamondGenerator
-        super().__init__(game, "diamond_ingot", 20)
+        super().__init__(game, "diamond", 20)
         self.crafts= [
             {DiamondGenerator: []}
         ]

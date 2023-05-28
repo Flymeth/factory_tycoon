@@ -14,7 +14,7 @@
 
 > map.py
 
-* faire la méthode create_chuck
+* améliorer la méthode create_chunk
 
 ## Market
 
@@ -26,11 +26,13 @@
 
 > blocks.py
 
+* Ajouter des blocks
+
 ## Items
 
 > items.py
 
-* faire la texture des items
+* ajouter des items
 
 ## Camera
 
@@ -40,7 +42,6 @@
 
 > main project
 
-* Faire les icons des blocks
 * Faire l'icon du jeu
-* Faire de l'optimisation
+* Faire de l'optimisation lors de la génération de chunks
 * **se laver**

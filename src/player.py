@@ -29,6 +29,8 @@ class Player:
         pass
     def gain(self, amount: float) -> float:
         self.credits+= amount
+        if self.game.DEV_MODE:
+            print(f"NEW PLAYER CREDIT: {self.credits}")
         return self.credits
     def key_pressed(self, key: int):
         if key in keys_index:
@@ -70,7 +72,7 @@ class Player:
             ]) == 2
         ):
             gui_mouse_position_x = mouse_position[0] - navbar_rect["position"][0]
-            index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings/2)
+            index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings)
             if index >= len(self.inventory_bar.content): return
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")

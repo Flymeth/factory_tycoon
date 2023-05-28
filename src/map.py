@@ -1,4 +1,5 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, GoldIngot
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
+from items import GoldIngot, IronIngot, DiamondIngot
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
@@ -6,20 +7,17 @@ from random import choice, random
 from custom_events_identifier import *
 
 class Map:
-    def __init__(self, game, init_block: Block, auto_generate_chunks= True) -> None:
+    def __init__(self, game, auto_generate_chunks= True) -> None:
         from _main import Game
 
         self.game: Game= game
         self.requires_processing: list[Block]= []
-        self.matrice= [[FloorBlock(game, "first_block")]]
+        self.matrice= [[FloorBlock(game, "center_block", "center")]]
 
         self.__center= 0, 0 # Les coordonnées du centre du monde
         self.game.add_event(PROCESS_EVENT, lambda g, e: self.update())
         if auto_generate_chunks:
             self.game.add_event(PROCESS_EVENT, lambda g, e: self.check_and_generate_chunks())
-        
-        self.place(init_block, (0, 0))
-        pass
     def update(self):
         """ Update the map's block
         """
@@ -116,13 +114,13 @@ class Map:
     @property
     def height(self):
         return len(self.matrice[0]) if self.width else 0
-    def create_chuck(self, width: int, height: int) -> list[list[Block]]:
+    def create_chuck(self, width: int, height: int, mine_chunk_chance= .2, mine_block_chance= .5) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
-        generate_mines = random() <= .2
-
+        generate_mines = random() < mine_chunk_chance
+        mine_type= choice([GoldIngot, IronIngot, DiamondIngot])
         return [[
-            MineBlock(self.game, GoldIngot) if generate_mines and random() <= .5 else EmptyBlock(self.game) 
+            MineBlock(self.game, mine_type) if generate_mines and random() < mine_block_chance else EmptyBlock(self.game) 
         for y in range(height)] for x in range(width)]
     def generate_chunks(self, direction: Direction.typeof= Direction.fast(), size= 20) -> tuple[list[list[Block]]]:
         """ Creates chunks in different directions and add them directly to the map
@@ -188,6 +186,7 @@ class Map:
         if isinstance(actual_block, MineBlock) and isinstance(block, Generator):
             block.change_extractor(actual_block.ressource)
         block.block_bellow= actual_block
+        block._cache_coordonates= coordonates
         self.matrice[x][y]= block
         self.requires_processing.append(block)
 
@@ -253,10 +252,13 @@ class Map:
             This method crashes if there isn't any block at this position
         """
         x, y= self.__generic_coordonates_to_matrice_coordonate__(*coordonates)
-        assert not isinstance(self.matrice[x][y], FloorBlock), "Tried to delete the floor"
         deleted = self.matrice[x][y]
+        assert not isinstance(deleted, FloorBlock), "Tried to delete the floor"
+        assert deleted.block_bellow, "Error: cannot replace the block because it doesn't have a bellow_block in stockage" # Normalement ce assert ne sert à rien, mais ne pas l'enlever
+
         if deleted in self.requires_processing:
             self.requires_processing.remove(deleted)
+        deleted._cache_coordonates= None
 
         # Remove connections
         for connection_in, block in deleted.connected["in"]:
@@ -268,7 +270,6 @@ class Map:
                 connection_in= (connection_in+2) %4
                 block.connected["in"].remove((connection_in, deleted))
         # --------------------------------------------------------------
-        assert deleted.block_bellow, "Error: cannot replace the block because it doesn't have a bellow_block in stockage" # Normalement ce assert ne sert à rien, mais ne pas l'enlever
         self.matrice[x][y]= deleted.block_bellow
         return deleted
     def get_block(self, x: int, y: int) -> Block | None:
@@ -278,6 +279,12 @@ class Map:
             return None
         return self.matrice[x][y]
     def find_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
+        """ Tries to find blocks in function of a predicate
+            Returns a list of tuples where the first element of each one is the coordonates of the block and the second element is the block itself.
+            
+            Return typage:
+                ((x, y), Block)[]; Where x & y are integers
+        """
         return [
             (self.__matrice_coordonates_to_generic_coordonate__(x, y), self.matrice[x][y])
             for x in range(len(self.matrice))

@@ -1,4 +1,4 @@
-from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL
+from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE
 from typing import Any
 from textures import get_texture
 
@@ -90,6 +90,9 @@ class Selector():
         self.can_scroll_up= False
         pass
     def update(self):
+        if key.get_pressed()[K_ESCAPE]:
+            return self.end()
+
         win_size= display.get_window_size()
         w, h = (
             win_size[0]/ 3.5,
@@ -162,8 +165,11 @@ class Selector():
         self.scrollDown+= scroll_y * self.scroll_speed
     def get(self) -> Any | None:
         self.active= True
-        while not (self.choosed or self.game.update()):
+        while not (self.choosed or self.game.update()) and self.active:
             self.update()
+        return self.end()
+    def end(self):
+        self.active= False
         self.unfreeze()
         return self.choosed
     def unfreeze(self):
