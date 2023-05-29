@@ -1,12 +1,12 @@
 from direction_sys import Direction
-from items import Item, Stone, GoldIngot
+from items import Item, Stone
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface
 from gui import Selector
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 3) -> None:
         from items import Item
         from _main import Game
 
@@ -49,6 +49,7 @@ class Block:
         self.block_bellow: Block | None= None
         self.update_interval: int = update_each # in miliseconds
         self._cache_coordonates: tuple[int, int] | None= None
+        self.max_storage= max_storage_item
         pass
     @property
     def texture(self) -> Surface:
@@ -59,9 +60,9 @@ class Block:
         """
         assert self.game, "Cannot calculate position without the game object"
         if self._cache_coordonates: return self._cache_coordonates
-        found= self.game.map.find_blocks(lambda block: block == self)
-        if not len(found) == 1: return None
-        coordonates= found[0][0]
+        found= self.game.map.find_block(lambda block: block == self)
+        if not found: return None
+        coordonates= found[0]
         self._cache_coordonates= coordonates
         return coordonates
     def draw(self):
@@ -117,7 +118,7 @@ class GlobalSeller(Seller):
 
 class Trash(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier= "trash", texture= "trash",  inputs= Direction.fast("a"), rotable= False)
+        super().__init__(game, identifier= "trash", texture= "trash",  inputs= Direction.fast("a"), rotable= False, update_each= 1)
     def exec(self):
         self.processing_items= []
 
@@ -141,9 +142,9 @@ class Generator(Block):
     def postprocessing(self, texture: Surface) -> Surface:
         ingot_texture= self.ingot_texture
         texture_size= texture.get_size()[0]
-        ingot_texture_size= texture_size /2
+        ingot_texture_size= texture_size /3
         
-        ingot_texture_pos= (texture_size - ingot_texture_size) /2
+        ingot_texture_pos= texture_size - ingot_texture_size * 1.02
         texture.blit(
             transform.scale(ingot_texture, [ingot_texture_size] *2),
             [ingot_texture_pos] *2
@@ -199,6 +200,7 @@ class Convoyer(Block):
     def __init__(self, game) -> None:
         super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("n"), outputs= Direction.fast("s"), texture= "covoyer/straigth")
         self.turned: int | False= False
+        self.__anim_items: list[tuple[Item, float]]= [] # (item, animation_state)[]
     def set_turned(self, turn_direction: Direction.single):
         assert turn_direction in Direction.fast("h")
         self.turned= turn_direction
@@ -214,8 +216,72 @@ class Convoyer(Block):
         else: self.set_straight()
         return False
     def exec(self):
-        if not self.processing_items: return
+        if not self.processing_items or len(self.processed_items) >= self.max_storage: return
         self.processed_items.append(self.processing_items.pop(0))
+    def postprocessing(self, texture: Surface) -> Surface:
+        if not (self.processed_items + self.processing_items): return texture
+        require_drawing= (self.processed_items + self.processing_items)[:self.max_storage]
+        texture_size = texture.get_size()[0]
+        item_size = texture_size /self.max_storage
+
+        animation_state: float = (self.game.time_infos.time["ms"]%self.update_interval) / self.update_interval # 0 <= x <= 1
+        animation_start_dir = Direction.rotate(self.inputs[0], self.right_rotations)
+        animation_end_dir   = Direction.rotate(self.outputs[0], self.right_rotations)
+
+        valid_positions: dict[int, tuple[float, float]]= {
+            Direction.North: ((texture_size - item_size)/2, -item_size /2),
+            Direction.South: ((texture_size - item_size)/2, texture_size - item_size/2),
+            Direction.West: (-item_size /2, (texture_size - item_size)/2),
+            Direction.East: (texture_size - item_size/2, (texture_size - item_size)/2)
+        }
+
+        animation_start_position= valid_positions.get(animation_start_dir)
+        animation_end_position  = valid_positions.get(animation_end_dir)
+
+        # remove unfounded items
+        for element in self.__anim_items:
+            item, anim_state= element
+            if not item in require_drawing:
+                self.__anim_items.remove(element)
+        # Adds new items
+        for item in require_drawing:
+            if not next((1 for i, anim_state in self.__anim_items if i == item), None):
+                self.__anim_items.append([item, 0])
+        
+        # Draw all items
+        for index, element in enumerate(self.__anim_items):
+            item, anim_state= element
+            item_texture= transform.scale(item.texture, [item_size] *2)
+
+            item_position= 0, 0
+            if self.turned:
+                STRENGHT = 2
+                states= (
+                    anim_state** STRENGHT,
+                    1- (1 - anim_state)** STRENGHT
+                )
+                if animation_end_dir in (Direction.North, Direction.South):
+                    states = states[1], states[0]
+                item_position = [
+                    animation_start_position[i] + (animation_end_position[i] - animation_start_position[i]) * states[i]
+                    for i in range(2)
+                ]
+            else:
+                item_position = [
+                    animation_start_position[i] + (animation_end_position[i] - animation_start_position[i]) * anim_state
+                    for i in range(2)
+                ]
+            if anim_state < .995:
+                self.__anim_items[index][1]= animation_state
+            texture.blit(item_texture, item_position)
+        return texture
+
+class Connecter(Block):
+    def __init__(self, game) -> None:
+        super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100)
+    def exec(self):
+        self.processed_items+= [*self.processing_items]
+        self.processing_items= []
 
 class Viewer(Block):
     def __init__(self, game) -> None:
@@ -254,10 +320,10 @@ class MineBlock(FloorBlock):
         texture_size= texture.get_size()[0]
         ressource_texture_size= texture_size /2
         
-        ingot_texture_pos= (texture_size - ressource_texture_size) /2
+        ingot_texture_pos= (texture_size - ressource_texture_size) /2, texture_size - ressource_texture_size * 1.05
         texture.blit(
             transform.scale(ressource_texture, [ressource_texture_size] *2),
-            [ingot_texture_pos] *2
+            ingot_texture_pos
         )
         return texture
 

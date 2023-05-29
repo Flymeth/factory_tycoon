@@ -106,7 +106,7 @@ class Game:
         """ Starts the game
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
-        pg.time.set_timer(PROCESS_EVENT, pg.TIMER_RESOLUTION or 1)
+        pg.time.set_timer(PROCESS_EVENT, 5)
         while not self.update(): pass
 
     def update(self) -> bool:

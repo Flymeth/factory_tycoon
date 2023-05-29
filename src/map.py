@@ -1,4 +1,4 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Connecter
 from items import GoldIngot, IronIngot, DiamondIngot
 from direction_sys import Direction
 from pygame.display import get_window_size
@@ -33,6 +33,8 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
+            if type(block) == Connecter:
+                pass
             if block.processed_items and block.connected["out"]:
                 valid_outputs_indexes: list[int]= []
                 if type(block.next_item_output) == Direction.single:
@@ -51,7 +53,8 @@ class Map:
                 ]
                 if not valid_blocks: continue
                 out_block= choice(valid_blocks)
-                out_block.processing_items.append(block.processed_items.pop(0))
+                if len(out_block.processing_items + out_block.processed_items) < out_block.max_storage:
+                    out_block.processing_items.append(block.processed_items.pop(0))
         
     def check_and_generate_chunks(self):
         assert self.game, "Cannot check and generate chunks automatically without the game object"
@@ -278,7 +281,7 @@ class Map:
         except AssertionError:
             return None
         return self.matrice[x][y]
-    def find_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
+    def filter_blocks(self, predicate: Callable[[Block], bool]= lambda block:False) -> list[tuple[tuple[int, int], Block]]:
         """ Tries to find blocks in function of a predicate
             Returns a list of tuples where the first element of each one is the coordonates of the block and the second element is the block itself.
             
@@ -291,7 +294,10 @@ class Map:
             for y in range(len(self.matrice[x]))
             if predicate(self.matrice[x][y])
         ]
-
+    def find_block(self, predicate: Callable[[Block], bool]= lambda block:False) -> tuple[tuple[int, int], Block]:
+        filtered= self.filter_blocks(predicate)
+        if not filtered: return None
+        return filtered[0]
     def flatten(self) -> list[Block]:
         array= []
         for index in range(self.width):
@@ -315,7 +321,7 @@ if __name__ == "__main__":
     m= Map(None, Trash(None), False)
     m.generate_chunks(Direction.fast("w"), 5)
     print(m.matrice)
-    # print(m.find_blocks(lambda block: block == m.get_block(-4, -2)))
+    # print(m.find_block(lambda block: block == m.get_block(-4, -2)))
 
     # my_trash= Trash(None)
     # my_sorter= Sorter(None)
