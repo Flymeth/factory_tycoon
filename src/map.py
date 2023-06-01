@@ -25,6 +25,7 @@ class Map:
         if not self.requires_processing: return
         time_infos= self.game.time_infos
         blocks = self.requires_processing
+
         # Updating each blocks (if required)
         [
             block.exec()
@@ -33,8 +34,6 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:
-            if type(block) == Connecter:
-                pass
             if block.processed_items and block.connected["out"]:
                 valid_outputs_indexes: list[int]= []
                 if type(block.next_item_output) == Direction.single:

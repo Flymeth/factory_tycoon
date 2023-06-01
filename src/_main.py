@@ -14,7 +14,9 @@ from custom_events_identifier import *
 DEV_MODE= True
 
 class TimeInformation():
+    MS_TIMER_INTERVAL= 10
     def __init__(self, time: int, possible_difference: int):
+        time= round(time, -str(self.MS_TIMER_INTERVAL).count("0"))
         self.time= {
             "ms": time,
             "s": time / 1000,
@@ -36,7 +38,7 @@ class TimeInformation():
         self.approximated_at= possible_difference
     def __str__(self) -> str:
         approximation= int(self.approximated_at/2)
-        return f"TIME<{round(self.time['s'] + approximation/1000, 3)}ms (+/- {approximation}ms)>"
+        return f"TIME<{round(self.time['s'] + approximation/1000, 3)}s (+/- {approximation}ms)>"
 
 class Modules:
     blocks= blocks
@@ -106,7 +108,7 @@ class Game:
         """ Starts the game
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
-        pg.time.set_timer(PROCESS_EVENT, 5)
+        pg.time.set_timer(PROCESS_EVENT, TimeInformation.MS_TIMER_INTERVAL)
         while not self.update(): pass
 
     def update(self) -> bool:

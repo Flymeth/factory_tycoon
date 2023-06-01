@@ -271,8 +271,10 @@ class Convoyer(Block):
                     animation_start_position[i] + (animation_end_position[i] - animation_start_position[i]) * anim_state
                     for i in range(2)
                 ]
-            if anim_state < .995:
-                self.__anim_items[index][1]= animation_state
+            
+            new_anim_state= (animation_state / self.max_storage) * (self.max_storage - index)
+            if anim_state < .995 and new_anim_state > anim_state:
+                self.__anim_items[index][1]= new_anim_state
             texture.blit(item_texture, item_position)
         return texture
 
