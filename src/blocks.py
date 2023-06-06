@@ -301,26 +301,6 @@ class Connecter(Block):
         self.processed_items+= [*self.processing_items]
         self.processing_items= []
 
-class Viewer(Block):
-    def __init__(self, game) -> None:
-        super().__init__(game, "viewer", inputs= Direction.fast("n"), outputs = Direction.fast("s"), decorative= True)
-    def exec(self):
-        if not self.processing_items: return
-        self.processed_items.append(self.processing_items.pop(0))
-    def postprocessing(self, texture: Surface) -> Surface:
-        if not self.processing_items: return texture
-
-        ingot_texture= self.processing_items[0].texture
-        texture_size= texture.get_size()[0]
-        ingot_texture_size= texture_size /2
-        
-        ingot_texture_pos= (texture_size - ingot_texture_size) /2
-        texture.blit(
-            transform.scale(ingot_texture, [ingot_texture_size] *2),
-            [ingot_texture_pos] *2
-        )
-        return texture
-
 class FloorBlock(Block):
     def __init__(self, game, identifier: str, texture="default_floor_texture") -> None:
         super().__init__(game, identifier= identifier, texture= texture, decorative= True, rotable= False)

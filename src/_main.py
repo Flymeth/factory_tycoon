@@ -81,17 +81,12 @@ class Game:
         self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
         self.running= True
         self.DEV_MODE= DEV_MODE
-        self.quests: list[quests.Quest]= []
+        self.AllTheQuests: list[type[quests.Quest]]= quests.AllTheQuests
         self.freeze_process= False
-
-        for key in dir(quests):
-            Q= getattr(quests, key)
-            if type(Q) == type(quests.Quest) and Q != quests.Quest:
-                self.quests.insert(0, Q(self))
         self.cam= Camera(self)
 
         self.map= map.Map(self)
-        self.player= player.Player(self, player_name)
+        self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy())
         self.marked= market.Market(self)
         self.require_drawing= []
         self.cache: dict[str, any]= {}
@@ -190,7 +185,7 @@ if __name__ == "__main__":
     print(g.events)
     g.rmv_event("test")
     print(g.events)
-    print(g.quests)
+    print(g.player.quests)
 
     g.map.generate_chunks(Direction.fast("a"), 5)
 

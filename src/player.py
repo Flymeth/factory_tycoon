@@ -1,12 +1,12 @@
 from quests import Quest
-from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Viewer, Connecter, FloorBlock
+from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock
 from items import Item
 from gui import InventoryBar
 from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal
-from custom_events_identifier import DRAW_EVENT
+from custom_events_identifier import DRAW_EVENT, TICK_EVENT
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 fast_edit_key= K_a
@@ -14,17 +14,18 @@ rotate_key= K_r
 edit_key= K_e
 
 class Player:
-    def __init__(self, game, name: str, default_balance= 0, default_quests: list[Quest]= []) -> None:
+    def __init__(self, game, name: str, default_balance= 0, quests_to_achieve: list[type[Quest]]= []) -> None:
         from _main import Game
 
         self.game: Game= game
         self.name= name
         self.balance: float= default_balance
-        self.active_quests= default_quests
+        self.quests= quests_to_achieve
+        self.active_quest: Quest | None = None
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
 
-        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), Generator(game), Connecter(game), Viewer(game)])
+        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), Generator(game), Connecter(game)])
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
@@ -32,9 +33,26 @@ class Player:
         self.game.add_event(DRAW_EVENT, lambda g, e: (
             self.draw_blockVisualisation(), self.inventory_bar.draw(), self.draw_hud()
         ))
-        self.uis_rects: list[Rect] = []
+        self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator())
+
+        self.uis_rects: list[Rect] = [self.inventory_bar.get_rect()]
         self.freeze_blocks_interaction= False
         pass
+    def quest_updator(self):
+        if not self.quests: return
+        if not self.active_quest:
+            self.active_quest= self.quests[0](self.game)
+        
+        self.active_quest.update_pourcentage()
+        if self.active_quest.check_success():
+            self.active_quest.give_reward()
+            self.achieved_quests.append(self.active_quest)
+
+            next_quest_index = self.quests.index(self.active_quest.__class__) +1
+            if next_quest_index >= len(self.quests):
+                self.quests= []
+                self.active_quest= None
+            else: self.active_quest= self.quests[next_quest_index](self.game)
     def gain(self, amount: float) -> float:
         self.balance+= amount
         if self.game.DEV_MODE:
@@ -153,4 +171,8 @@ class Player:
         ])
 
         self.game.draw(balance_bg, ((window_size[0] - balance_bg_rect.width)/2, 0))
+
+        # Current Quest
+        if self.active_quest:
+            self.active_quest.draw()
         pass
