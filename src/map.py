@@ -30,7 +30,7 @@ class Map:
         [
             block.exec()
             for block in blocks
-            if time_infos.time["ms"]%block.update_interval <= time_infos.approximated_at
+            if time_infos.time["ms"]%block.update_interval <= time_infos.approximated_at/2
         ]
         # Distributing items --> do it after updates to avoid 'fast travel'
         for block in blocks:

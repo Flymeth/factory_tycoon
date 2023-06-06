@@ -1,5 +1,5 @@
 from pygame import colordict, MOUSEBUTTONUP, MOUSEBUTTONDOWN, MOUSEWHEEL, mouse, event, display, KEYDOWN, KEYUP, K_UP, K_DOWN, K_RIGHT, K_LEFT, K_KP_PLUS, K_KP_MINUS
-from font import TEXT_FONT
+from fonts import TEXT_FONT
 from math import ceil, floor
 from custom_events_identifier import TICK_EVENT, DRAW_EVENT
 
@@ -193,6 +193,7 @@ class Camera():
                 if draw_block(x, y):
                     drawed+= 1
         self.game.player.inventory_bar.draw()
+        self.game.player.draw_hud()
         if self.game.DEV_MODE:
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (255, 255, 255))
@@ -200,4 +201,4 @@ class Camera():
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 50), f"POSITION: {self.position}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 65), f"SCREEN CENTER BLOCK: {(center_x, center_y)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 80), f"PRINT RANGE: {(ranges['x'][0], ranges['y'][0])}, {(ranges['x'][1], ranges['y'][1])}", (255, 255, 255))
-            TEXT_FONT.render_to(self.game.pygame.screen, (5, 95), f"CREDIT: {self.game.player.credits}", (255, 255, 255))
+            TEXT_FONT.render_to(self.game.pygame.screen, (5, 95), f"CREDIT: {self.game.player.balance}", (255, 255, 255))

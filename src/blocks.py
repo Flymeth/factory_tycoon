@@ -94,7 +94,7 @@ class Block:
 
 class Seller(Block):
     def __init__(self, game, sell_type: list[Item]= []) -> None:
-        super().__init__(game, identifier= "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1, rotable= False)
+        super().__init__(game, identifier= "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1, rotable= False, update_each= 200)
         self.accept= sell_type
     def exec(self):
         if self.requires_maintenance or not self.processing_items: return
@@ -170,6 +170,7 @@ class Sorter(Block):
     def __init__(self, game, valid_items: list[Item]= []) -> None:
         super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
         self.valid= valid_items
+        self.inverted= False
     def exec(self):
         if not self.processing_items or self.processed_items: return
 
@@ -182,8 +183,15 @@ class Sorter(Block):
         if is_valid_item:
             self.next_item_output = Direction.fast("s")
         else:
-            self.next_item_output = Direction.fast("e")
+            self.next_item_output = Direction.fast("w" if self.inverted else "e")
         self.processed_items.append(item)
+    def fast_edit(self) -> bool:
+        self.inverted= not self.inverted
+        if self.inverted:
+            self.outputs= Direction.fast("sw")
+        else:
+            self.outputs= Direction.fast("se")
+        return True
     def edit(self) -> bool:
         from items import GoldIngot, Stone, DiamondIngot, IronIngot
         valid_items = [
@@ -195,10 +203,15 @@ class Sorter(Block):
         if isinstance(item, Item):
             self.valid= [item]
         return False
+    def postprocessing(self, texture: Surface) -> Surface:
+        if self.inverted:
+            rotate_x= self.right_rotations%2 == 0
+            texture= transform.flip(texture, rotate_x, not rotate_x)
+        return texture
 
 class Convoyer(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("n"), outputs= Direction.fast("s"), texture= "covoyer/straigth")
+        super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("n"), outputs= Direction.fast("s"), texture= "covoyer/straigth", max_storage_item= 3)
         self.turned: int | False= False
         self.__anim_items: list[tuple[Item, float]]= [] # (item, animation_state)[]
     def set_turned(self, turn_direction: Direction.single):
@@ -222,7 +235,7 @@ class Convoyer(Block):
         if not (self.processed_items + self.processing_items): return texture
         require_drawing= (self.processed_items + self.processing_items)[:self.max_storage]
         texture_size = texture.get_size()[0]
-        item_size = texture_size /self.max_storage
+        item_size = texture_size /2.5
 
         animation_state: float = (self.game.time_infos.time["ms"]%self.update_interval) / self.update_interval # 0 <= x <= 1
         animation_start_dir = Direction.rotate(self.inputs[0], self.right_rotations)
@@ -280,7 +293,7 @@ class Convoyer(Block):
 
 class Connecter(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100)
+        super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100, max_storage_item= float("inf"))
     def exec(self):
         self.processed_items+= [*self.processing_items]
         self.processing_items= []

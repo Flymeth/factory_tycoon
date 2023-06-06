@@ -14,7 +14,7 @@ from custom_events_identifier import *
 DEV_MODE= True
 
 class TimeInformation():
-    MS_TIMER_INTERVAL= 10
+    MS_TIMER_INTERVAL= 1
     def __init__(self, time: int, possible_difference: int):
         time= round(time, -str(self.MS_TIMER_INTERVAL).count("0"))
         self.time= {
@@ -68,6 +68,7 @@ class Pygame():
         self.app = pg
         self.dt = 0
         self.ticks= 0
+        self.ms= 0
     def next_tick(self) -> float:
         self.dt = self.clock.tick(self.fps)
         self.ticks+= 1
@@ -94,15 +95,18 @@ class Game:
         self.player= player.Player(self, player_name)
         self.marked= market.Market(self)
         self.require_drawing= []
-        self.__last_tick: int= 0
-        pass
+        self.cache: dict[str, any]= {}
+
+        # Shorthands
+        self.screen= self.pygame.screen
+        self.draw= self.screen.blit
     @property
     def time_infos(self) -> TimeInformation:
-        """ Get time informations since the pygame.init() has been fired (= since the game started)
+        """ Get time informations since the app started
         """
-        time= pg.time.get_ticks()
-        possible_difference= time - self.__last_tick
-        self.__last_tick= time
+        time= self.pygame.ms
+        possible_difference= time - self.cache.get("last_tick", 0)
+        self.cache["last_tick"]= time
         return TimeInformation(time, possible_difference)
     def start(self):
         """ Starts the game
@@ -119,6 +123,8 @@ class Game:
 
         for event in self.pygame.app.event.get():
             self.fire_event(event.type, event)
+            if event.type == PROCESS_EVENT:
+                self.pygame.ms+= TimeInformation.MS_TIMER_INTERVAL
         self.fire_event(DRAW_EVENT, pg.event.Event(DRAW_EVENT, {"dt": self.pygame.dt, "index": self.pygame.ticks}))
         if not self.running: return True
 

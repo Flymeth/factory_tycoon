@@ -2,7 +2,11 @@ from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Viewer, Connecter
 from items import Item
 from gui import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r, K_e
+from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r, K_e, display, transform
+from fonts import TITLE_FONT_BOLD
+from textures import get_texture
+
+import colors
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 fast_edit_key= K_a
@@ -10,12 +14,12 @@ rotate_key= K_r
 edit_key= K_e
 
 class Player:
-    def __init__(self, game, name: str, default_credits= 0, default_quests: list[Quest]= []) -> None:
+    def __init__(self, game, name: str, default_balance= 0, default_quests: list[Quest]= []) -> None:
         from _main import Game
 
         self.game: Game= game
         self.name= name
-        self.credits= default_credits
+        self.balance: float= default_balance
         self.active_quests= default_quests
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
@@ -28,10 +32,10 @@ class Player:
         self.freeze_blocks_interaction= False
         pass
     def gain(self, amount: float) -> float:
-        self.credits+= amount
+        self.balance+= amount
         if self.game.DEV_MODE:
-            print(f"NEW PLAYER CREDIT: {self.credits}")
-        return self.credits
+            print(f"NEW PLAYER BALANCE: {self.balance}")
+        return self.balance
     def key_pressed(self, key: int):
         if key in keys_index:
             index= keys_index.index(key)
@@ -97,3 +101,22 @@ class Player:
     def remove(self):
         assert self.game, "Cannot perform this action because the game object is required"
         self.game.map.delete(self.game.cam.get_cursor_coordonates())
+    def draw_hud(self):
+        window_size= display.get_window_size()
+
+        # Balance
+        balance_text_padding= 25
+        balance_text, balance_rect= TITLE_FONT_BOLD.render(f"Balance: ${self.balance}", fgcolor= (0, 0, 0), size= 20)
+        balance_bg_texture= get_texture("uis", "balance_bg")
+        balance_bg= transform.scale(balance_bg_texture, (
+            balance_rect.width + balance_text_padding *2,
+            balance_rect.height + balance_text_padding *2
+        ))
+        balance_bg_rect= balance_bg.get_rect()
+        balance_bg.blit(balance_text, [
+            (getattr(balance_bg_rect, prop) - getattr(balance_rect, prop))/2
+            for prop in ("width", "height")
+        ])
+
+        self.game.draw(balance_bg, ((window_size[0] - balance_bg_rect.width)/2, 0))
+        pass

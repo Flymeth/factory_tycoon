@@ -2,6 +2,9 @@ from pygame import image, Surface, SRCALPHA
 from os.path import exists
 cache: dict[str, Surface]= {}
 
+def new_blank_texture(size: tuple[int, int]) -> Surface:
+    return Surface(size, SRCALPHA, 32).convert_alpha()
+
 def create_surface(texture_path: str) -> Surface:
     if not (texture_path and exists(texture_path)): texture_path= "src/assets/no_texture.png"
     return image.load(texture_path, f"Image at path {texture_path}").convert_alpha()
