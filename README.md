@@ -26,3 +26,9 @@ The only exeption is inside the Map object: the map's matrice requires the coord
 ---|---|---
 (-1, 0)|(0, 0)|(1, 0)
 (-1, -1)|(0, -1)|(1, -1)
+
+## Game in action
+
+Here is a video showing me playing the game (in beta mode)
+
+![The video](https://cdn.discordapp.com/attachments/1014814644646449160/1115704897023783032/2023-06-06_20-07-01.mp4)
