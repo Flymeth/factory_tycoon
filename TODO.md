@@ -18,15 +18,13 @@
 
 > market.py
 
-* faire la classe
+* finir la classe
 
 ## Blocks
 
 > blocks.py
 
 * Ajouter des blocks
-* [postprecessing_texture]> Convoyer: Les items sautent parfois, ou ne s'affiche qu'avec un `update_time` de retard.
-* [postprecessing_texture]> Convoyer: Revoir l'animation lorsque les items sont bloqués.
 
 ## Items
 
