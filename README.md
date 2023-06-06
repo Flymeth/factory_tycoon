@@ -29,6 +29,4 @@ The only exeption is inside the Map object: the map's matrice requires the coord
 
 ## Game in action
 
-Here is a video showing me playing the game (in beta mode)
-
-![The video](https://cdn.discordapp.com/attachments/1014814644646449160/1115704897023783032/2023-06-06_20-07-01.mp4)
+[Here is a video showing me playing the game (in beta mode).](https://cdn.discordapp.com/attachments/1014814644646449160/1115704897023783032/2023-06-06_20-07-01.mp4)
