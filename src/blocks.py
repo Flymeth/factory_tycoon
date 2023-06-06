@@ -2,7 +2,7 @@ from direction_sys import Direction
 from items import Item, Stone
 from random import random, choice
 from textures import get_texture
-from pygame import transform, display, Surface
+from pygame import transform, display, Surface, Rect
 from gui import Selector
 
 class Block:
@@ -65,25 +65,28 @@ class Block:
         coordonates= found[0]
         self._cache_coordonates= coordonates
         return coordonates
-    def draw(self):
-        """ Tries to draw the block and returns if False if the block has not been drawed, else returns True
-        """
-        assert self.game, "Cannot draw block without the game object"
+    def get_rect(self) -> Rect | None:
+        if not self.coordonates: return
         x, y= self.game.cam.get_screen_position(self.coordonates)
         width, height= display.get_window_size()
-        if not (
+        if(
             -self.game.cam.zoom <= x <= width
             and -self.game.cam.zoom <= y <= height
-        ): return False
-
+        ): return Rect(x, y, self.game.cam.zoom, self.game.cam.zoom)
+    def get_surface(self) -> Surface:
         angle= -self.right_rotations * 90
-        texture= transform.scale(
-            transform.rotate(
-                self.texture, 
-                angle
-            ), [self.game.cam.zoom]*2
+        return transform.rotate(
+            self.texture, 
+            angle
         )
-        self.game.pygame.screen.blit(self.postprocessing(texture), (x, y))
+    def draw(self) -> bool:
+        """ Tries to draw the block and returns False if the block has not been drawed, else returns True
+        """
+        rect = self.get_rect()
+        if not rect: return False
+
+        texture= transform.scale(self.get_surface(), rect.size)
+        self.game.draw(self.postprocessing(texture), rect.topleft)
         return True
     def exec(self): pass
     def edit(self) -> bool: pass
@@ -125,7 +128,7 @@ class Trash(Block):
 class Generator(Block):
     def __init__(self, game, ingot_type: type[Item]= Stone, ingot_spawn_chance: float = .35) -> None:
         assert 0 <= ingot_spawn_chance <= 1, "Spawn change must be between 0 and 1 included"
-        super().__init__(game, "generator", outputs= Direction.fast("a"), texture= "generator", rotable= False)
+        super().__init__(game, "generator", outputs= Direction.fast("a"), texture= "generator", rotable= False, update_each= 2000)
 
         self.others: list[type[Item]]= [Stone]
         self.spawn_chance= ingot_spawn_chance
@@ -211,21 +214,21 @@ class Sorter(Block):
 
 class Convoyer(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("n"), outputs= Direction.fast("s"), texture= "covoyer/straigth", max_storage_item= 3)
+        super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("s"), outputs= Direction.fast("n"), texture= "covoyer/straigth", max_storage_item= 3)
         self.turned: int | False= False
         self.__anim_items: list[tuple[Item, float]]= [] # (item, animation_state)[]
     def set_turned(self, turn_direction: Direction.single):
-        assert turn_direction in Direction.fast("h")
+        assert turn_direction in Direction.fast("h"), "Invalid turn direction has been set"
         self.turned= turn_direction
         self.outputs= Direction.listify(turn_direction)
         self._texture= f"covoyer/turn_{'right' if turn_direction == Direction.East else 'left'}"
     def set_straight(self):
         self.turned= False
-        self.outputs= Direction.fast("s")
+        self.outputs= Direction.fast("n")
         self._texture= "covoyer/straigth"
     def fast_edit(self):
-        if not self.turned: self.set_turned(Direction.West)
-        elif self.turned == Direction.West: self.set_turned(Direction.East)
+        if not self.turned: self.set_turned(Direction.East)
+        elif self.turned == Direction.East: self.set_turned(Direction.West)
         else: self.set_straight()
         return False
     def exec(self):

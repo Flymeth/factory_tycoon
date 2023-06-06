@@ -16,13 +16,12 @@ DEV_MODE= True
 class TimeInformation():
     MS_TIMER_INTERVAL= 1
     def __init__(self, time: int, possible_difference: int):
-        time= round(time, -str(self.MS_TIMER_INTERVAL).count("0"))
         self.time= {
             "ms": time,
             "s": time / 1000,
             "m": time / (1000 * 60),
-            "h": time / (1000 * 60^2),
-            "d": time / (1000 * 60^2 * 24)
+            "h": time / (1000 * 60**2),
+            "d": time / (1000 * 60**2 * 24)
         }
         """
             ```py

@@ -1,4 +1,4 @@
-from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE
+from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE, Rect
 from typing import Any
 from textures import get_texture
 
@@ -22,29 +22,19 @@ class InventoryBar():
         self.content[self.selected]= self.content[self.selected].__class__(self.game)
         return selected
     def get_rect(self):
-        """ Return the rect of the gui
-            {
-                "size": tuple[float],
-                "position": tuple[float]
-            }
+        """ Returns the rect of the gui
         """
         window_size = display.get_window_size()
         width, height = (
             self.paddings + len(self.content) * (self.items_size + self.paddings),
             self.paddings *2 + self.items_size
         )
-        return {
-            "size": (width, height),
-            "position": (
-                window_size[0]/2 - width/2,
-                window_size[1] - (height + self.paddings)
-            )
-        }
+        return Rect((window_size[0] - width)/2, window_size[1] - (height + self.paddings), width, height)
     def draw(self):
         assert self.game, "Cannot draw without the game object"
 
         rect = self.get_rect()
-        gui= Surface(rect["size"])
+        gui= Surface(rect.size)
         
         for index, block in enumerate(self.content):
             x, y = (
@@ -59,7 +49,7 @@ class InventoryBar():
             
             gui.blit(texture, (x, y))
 
-        self.game.pygame.screen.blit(gui, rect["position"])
+        self.game.draw(gui, rect.topleft)
 
 class Selector():
     def __init__(self, game, choices: list[Any], items_per_row= 3, freeze_game= False, scroll_speed = 5) -> None:

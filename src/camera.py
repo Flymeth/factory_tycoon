@@ -192,8 +192,6 @@ class Camera():
             for y in range(*ranges["y"]):
                 if draw_block(x, y):
                     drawed+= 1
-        self.game.player.inventory_bar.draw()
-        self.game.player.draw_hud()
         if self.game.DEV_MODE:
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 5), f"FPS: {round(self.game.pygame.clock.get_fps(), 2)}", (255, 255, 255))
             TEXT_FONT.render_to(self.game.pygame.screen, (5, 20), f"DRAWED BLOCKS: {drawed}", (255, 255, 255))
