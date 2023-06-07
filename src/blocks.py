@@ -97,7 +97,7 @@ class Block:
 
 class Seller(Block):
     def __init__(self, game, sell_type: list[Item]= []) -> None:
-        super().__init__(game, identifier= "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1, rotable= False, update_each= 200)
+        super().__init__(game, identifier= "seller", inputs= Direction.fast("a"), texture= "seller", max_level= 1, rotable= False, update_each= 200, max_storage_item= float("inf"))
         self.accept= sell_type
     def exec(self):
         if self.requires_maintenance or not self.processing_items: return

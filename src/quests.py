@@ -1,5 +1,7 @@
 from pygame import Rect, Surface, display
 from fonts import TITLE_FONT, TEXT_FONT, auto_wrap
+from items import IronIngot, GoldIngot
+from blocks import Sorter, Trash, FloorBlock, Connecter
 import colors
 
 class Quest:
@@ -73,14 +75,79 @@ class FirstSelledItem(Quest):
 
 class Achieve150Credits(Quest):
     def __init__(self, game) -> None:
-        super().__init__(game, "Making money", "Achieve 150 credits.")
+        super().__init__(game, "Making money", "Make 150 credits from now.")
         self.init_credit= self.game.player.balance
     def check_success(self) -> bool:
         return self.game.player.balance - self.init_credit > 150
     def give_reward(self) -> None:
+        self.game.player.inventory_bar.content+= [Trash(self.game), Sorter(self.game)]
         return self.game.player.gain(100)
     def update_pourcentage(self):
         self.pourcentage_done= ((self.game.player.balance - self.init_credit) / 150) *100
+
+class Sell20IronsInARow(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "Only Irons", "Sell 20 iron ingots in a row.")
+    def check_success(self) -> bool:
+        last_20_selled_items = self.game.player.selled[len(self.game.player.selled) - 20:]
+        for item in last_20_selled_items:
+            if not type(item) == IronIngot:
+                return False
+        return True
+    def update_pourcentage(self):
+        last_20_selled_items = self.game.player.selled[len(self.game.player.selled) - 20:]
+        valid= 0
+        for item in reversed(last_20_selled_items):
+            if type(item) == IronIngot:
+                valid+= 1
+            else: break
+        self.pourcentage_done = (valid / 20) * 100
+    def give_reward(self) -> None:
+        return self.game.player.gain(120)
+
+class ABitHarder(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "A bit harder", "Sell 15 gold ingots in a row, with only 4 blocks.")
+        self.checking_from_index = 0
+        self.reset_index()
+    def check_success(self) -> bool:
+        placed_blocks = self.game.map.filter_blocks(lambda block: not isinstance(block, FloorBlock))
+        if len(placed_blocks) != 4: return False
+        
+        last_selled_items = self.game.player.selled[self.checking_from_index:]
+        if len(last_selled_items) < 15: return False
+
+        for item in last_selled_items:
+            if type(item) != GoldIngot:
+                return False
+        return True
+    def update_pourcentage(self):
+        placed_blocks = self.game.map.filter_blocks(lambda block: not isinstance(block, FloorBlock))
+        if len(placed_blocks) != 4:
+            self.pourcentage_done = 0
+            return self.reset_index()
+        
+        last_selled_items = self.game.player.selled[self.checking_from_index:]
+        for item in reversed(last_selled_items):
+            if type(item) != GoldIngot:
+                self.pourcentage_done = 0
+                return self.reset_index()
+        
+        self.pourcentage_done = (len(last_selled_items) / 15) * 100
+    def reset_index(self):
+        self.checking_from_index = len(self.game.player.selled) -1
+    def give_reward(self) -> None:
+        self.game.player.inventory_bar.content.append(Connecter(self.game))
+
+class LovingMoney(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "We all love money...", "Achieve 5000 credits. (We recommend you to make a big factory)")
+    def check_success(self) -> bool:
+        return self.game.player.balance >= 5000
+    def update_pourcentage(self):
+        self.pourcentage_done = (self.game.player.balance / 5000) * 100
+    def give_reward(self) -> None:
+        return super().give_reward()
 
 class Finished(Quest):
     def __init__(self, game) -> None:

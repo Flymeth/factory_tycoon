@@ -25,7 +25,7 @@ class Player:
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
 
-        self.inventory_bar = InventoryBar(game, [Trash(game), GlobalSeller(game), Convoyer(game), Sorter(game), Generator(game), Connecter(game)])
+        self.inventory_bar = InventoryBar(game, [Generator(game), Convoyer(game), GlobalSeller(game)])
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
