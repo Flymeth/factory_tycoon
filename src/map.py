@@ -1,10 +1,11 @@
-from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Connecter
+from blocks import Block, FloorBlock, EmptyBlock, Trash, MineBlock, Generator, Connecter, GlobalSeller
 from items import GoldIngot, IronIngot, DiamondIngot
 from direction_sys import Direction
 from pygame.display import get_window_size
 from typing import Callable
 from random import choice, random
 from custom_events_identifier import *
+from typing import Literal
 
 class Map:
     def __init__(self, game, auto_generate_chunks= True) -> None:
@@ -116,7 +117,7 @@ class Map:
     @property
     def height(self):
         return len(self.matrice[0]) if self.width else 0
-    def create_chuck(self, width: int, height: int, mine_chunk_chance= .2, mine_block_chance= .5) -> list[list[Block]]:
+    def create_chuck(self, width: int, height: int, mine_chunk_chance= .15, mine_block_chance= .3) -> list[list[Block]]:
         """ Creates on random chuck and returns it
         """
         generate_mines = random() < mine_chunk_chance
@@ -174,9 +175,9 @@ class Map:
         except AssertionError as err:
             if self.game.DEV_MODE:
                 print(f"Cannot actualize block:\n{err}")
-    def place(self, block: Block, coordonates: tuple[int, int]):
+    def place(self, block: Block, coordonates: tuple[int, int]) -> Literal[True] | None:
         """ Places a block in the map
-            This method crashes if there is another block at this position
+            This method crashes (= returns None with a try/except) if there is another block at this position
 
             Note:
                 coordonates -> The generic coordonates
@@ -249,6 +250,7 @@ class Map:
                             if connection[0] != sender_output_index
                         ] + [(sender_output_index, receiver)]
         # ----------------------------------------------------------------------------- #
+        return True
     def delete(self, coordonates: tuple[int, int]) -> Block:
         """ Deletes a block in the map and returns it
             This method crashes if there isn't any block at this position

@@ -80,7 +80,7 @@ class Achieve150Credits(Quest):
     def check_success(self) -> bool:
         return self.game.player.balance - self.init_credit > 150
     def give_reward(self) -> None:
-        self.game.player.inventory_bar.content+= [Trash(self.game), Sorter(self.game)]
+        self.game.player.inventory_bar.content+= [(Trash(self.game), 20), (Sorter(self.game), 5)]
         return self.game.player.gain(100)
     def update_pourcentage(self):
         self.pourcentage_done= ((self.game.player.balance - self.init_credit) / 150) *100
@@ -107,7 +107,7 @@ class Sell20IronsInARow(Quest):
 
 class ABitHarder(Quest):
     def __init__(self, game) -> None:
-        super().__init__(game, "A bit harder", "Sell 15 gold ingots in a row, with only 4 blocks.")
+        super().__init__(game, "A bit harder", "Sell 7 gold ingots in a row, with only 4 blocks.")
         self.checking_from_index = 0
         self.reset_index()
     def check_success(self) -> bool:
@@ -115,7 +115,7 @@ class ABitHarder(Quest):
         if len(placed_blocks) != 4: return False
         
         last_selled_items = self.game.player.selled[self.checking_from_index:]
-        if len(last_selled_items) < 15: return False
+        if len(last_selled_items) < 7: return False
 
         for item in last_selled_items:
             if type(item) != GoldIngot:
@@ -133,11 +133,11 @@ class ABitHarder(Quest):
                 self.pourcentage_done = 0
                 return self.reset_index()
         
-        self.pourcentage_done = (len(last_selled_items) / 15) * 100
+        self.pourcentage_done = (len(last_selled_items) / 7) * 100
     def reset_index(self):
         self.checking_from_index = len(self.game.player.selled) -1
     def give_reward(self) -> None:
-        self.game.player.inventory_bar.content.append(Connecter(self.game))
+        self.game.player.inventory_bar.content.append((Connecter(self.game), 5))
 
 class LovingMoney(Quest):
     def __init__(self, game) -> None:

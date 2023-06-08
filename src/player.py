@@ -25,7 +25,7 @@ class Player:
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
 
-        self.inventory_bar = InventoryBar(game, [Generator(game), Convoyer(game), GlobalSeller(game)])
+        self.inventory_bar = InventoryBar(game, [(Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)])
         self.inventory_bar.selected= 0
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
@@ -72,7 +72,7 @@ class Player:
         block = self.game.map.get_block(*cursor)
         is_visualisationBlock= False
         if isinstance(block, FloorBlock):
-            block= self.inventory_bar.content[self.inventory_bar.selected]
+            block= self.inventory_bar.content[self.inventory_bar.selected][0]
             is_visualisationBlock= True
         if not block: return
         actualisation_required= False
@@ -132,10 +132,15 @@ class Player:
         assert self.inventory_bar.selected >= 0, "Player has not selected an item"
         coordonates = self.game.cam.get_cursor_coordonates()
         assert coordonates, "Invalid cursor position"
-        self.game.map.place(self.inventory_bar.get_selected_block(), coordonates)
+        block = self.inventory_bar.get_selected_block()
+        if not block: return
+        placed= self.game.map.place(block, coordonates)
+        if placed:
+            self.inventory_bar.modify_amount(block, -1)
     def remove(self):
         assert self.game, "Cannot perform this action because the game object is required"
-        self.game.map.delete(self.game.cam.get_cursor_coordonates())
+        block = self.game.map.delete(self.game.cam.get_cursor_coordonates())
+        self.inventory_bar.modify_amount(block, 1)
     def draw_blockVisualisation(self):
         if self.game.cam.moving_camera: return
 
@@ -144,7 +149,8 @@ class Player:
         if not isinstance(current_block, FloorBlock): return
 
         inv= self.inventory_bar
-        block = inv.content[inv.selected]
+        block, amount = inv.content[inv.selected]
+        if not amount: return
         block._cache_coordonates= coordonates
         rect = block.get_rect()
         if not rect: return False

@@ -1,14 +1,15 @@
 from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE, Rect
 from typing import Any
 from textures import get_texture
+from fonts import TEXT_FONT
 
 class InventoryBar():
-    def __init__(self, game, content: list[Any] = []) -> None:
+    def __init__(self, game, content: list[tuple[Any, int]] = []) -> None:
         from _main import Game
         from blocks import Block
 
         self.game: Game= game
-        self.content: list[Block]= content
+        self.content: list[tuple[Block, int]] = content
         self.selected: int = -1
         self.items_size= 50
         self.paddings= 5
@@ -17,10 +18,16 @@ class InventoryBar():
         """ Returns the block's instance of the selected block and generate another to replace it
         """
         assert self.selected >= 0, "Player has not selected any block"
-
-        selected = self.content[self.selected]
-        self.content[self.selected]= self.content[self.selected].__class__(self.game)
+    
+        selected, amount = self.content[self.selected]
+        if not amount: return None
+        self.content[self.selected]= (selected.__class__(self.game), amount)
         return selected
+    def modify_amount(self, block: Any, add: int):
+        for index, (nav_block, amount) in enumerate(self.content):
+            if type(nav_block) == type(block):
+                self.content[index]= (nav_block, max(0, amount + add))
+                break
     def get_rect(self):
         """ Returns the rect of the gui
         """
@@ -36,7 +43,7 @@ class InventoryBar():
         rect = self.get_rect()
         gui= Surface(rect.size)
         
-        for index, block in enumerate(self.content):
+        for index, (block, amount) in enumerate(self.content):
             x, y = (
                 self.paddings + index * (self.items_size + self.paddings),
                 self.paddings
@@ -45,8 +52,13 @@ class InventoryBar():
                 block.texture,
                 [self.items_size] * 2
             )
-            if index != self.selected: texture.set_alpha(120)
             
+            if index != self.selected: texture.set_alpha(120)
+            if not amount: texture.set_alpha(50)
+            
+            amount_text, amount_rect = TEXT_FONT.render(str(amount), fgcolor= (255, 255, 255), size= 15)
+            texture.blit(amount_text, (self.items_size - amount_rect.width - 2, self.items_size - amount_rect.height - 2))
+
             gui.blit(texture, (x, y))
 
         self.game.draw(gui, rect.topleft)

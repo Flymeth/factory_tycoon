@@ -40,6 +40,5 @@
 
 > main project
 
-* Faire l'icon du jeu
 * Faire de l'optimisation lors de la génération de chunks
 * **se laver**

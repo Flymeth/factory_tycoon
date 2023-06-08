@@ -49,8 +49,8 @@ class Camera():
         self.game.add_event(KEYUP, lambda g, e: self.key_up(e.key))
         self.min_max_zoom= (30, 200)
         self.min_max_position= [
-            (-2000, 2000),
-            (-2000, 2000)
+            (-50000, 50000),
+            (-50000, 50000)
         ]
         self.freeze_position= False
         self.freeze_zoom= False
