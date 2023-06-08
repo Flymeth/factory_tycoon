@@ -230,7 +230,7 @@ class Convoyer(Block):
         if not self.turned: self.set_turned(Direction.East)
         elif self.turned == Direction.East: self.set_turned(Direction.West)
         else: self.set_straight()
-        return False
+        return True
     def exec(self):
         if not self.processing_items or len(self.processed_items) >= self.max_storage: return
         self.processed_items.append(self.processing_items.pop(0))

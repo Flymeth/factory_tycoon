@@ -112,7 +112,8 @@ class Player:
         ):
             gui_mouse_position_x = mouse_position[0] - navbar_rect.topleft[0]
             index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings)
-            if index >= len(self.inventory_bar.content): return
+            if index >= len(self.inventory_bar.content) or self.inventory_bar.content[index][1] == 0:
+                return
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
             self.inventory_bar.selected = index
