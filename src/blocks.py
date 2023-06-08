@@ -6,7 +6,7 @@ from pygame import transform, display, Surface, Rect
 from gui import Selector
 
 class Block:
-    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 3) -> None:
+    def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 1) -> None:
         from items import Item
         from _main import Game
 
@@ -171,7 +171,7 @@ class IronGenerator(Generator):
 
 class Sorter(Block):
     def __init__(self, game, valid_items: list[Item]= []) -> None:
-        super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5)
+        super().__init__(game, "sorter", inputs= Direction.fast("n"), outputs= Direction.fast("se"), texture= "sorter", max_level= 5, max_storage_item= 4)
         self.valid= valid_items
         self.inverted= False
     def exec(self):
