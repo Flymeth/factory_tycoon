@@ -18,9 +18,6 @@
 
 > market.py
 
-* finir la classe
-* finir le gui
-
 ## Blocks
 
 > blocks.py
@@ -37,9 +34,16 @@
 
 > camera.py
 
+## GUI
+
+> gui.py
+
+* faire une classe principale
+
 ## Other
 
 > main project
 
 * Faire de l'optimisation lors de la génération de chunks
+* Revoir 2/3 bouts de code qui ne sont pas propre dutous (nottament dans les classes GUI)
 * **se laver**

@@ -2,7 +2,7 @@ from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock
 from items import Item
 from gui import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_r, K_e, display, transform, Rect
+from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal
@@ -12,6 +12,7 @@ keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 fast_edit_key= K_a
 rotate_key= K_r
 edit_key= K_e
+market_key= K_m
 
 class Player:
     def __init__(self, game, name: str, default_balance= 0, quests_to_achieve: list[type[Quest]]= []) -> None:
@@ -65,6 +66,13 @@ class Player:
             self.inventory_bar.selected= index
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
+            return
+        elif key == market_key:
+            try:
+                self.game.marked.open_market()
+            except AssertionError as err:
+                if self.game.DEV_MODE:
+                    print(f"Cannot open the market:\n{err}")
             return
         
         if self.freeze_blocks_interaction: return
@@ -143,7 +151,7 @@ class Player:
         block = self.game.map.delete(self.game.cam.get_cursor_coordonates())
         self.inventory_bar.modify_amount(block, 1)
     def draw_blockVisualisation(self):
-        if self.game.cam.moving_camera: return
+        if self.game.cam.moving_camera or self.freeze_blocks_interaction: return
 
         coordonates= self.game.cam.get_cursor_coordonates()
         current_block= self.game.map.get_block(*coordonates)

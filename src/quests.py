@@ -80,7 +80,8 @@ class Achieve150Credits(Quest):
     def check_success(self) -> bool:
         return self.game.player.balance - self.init_credit > 150
     def give_reward(self) -> None:
-        self.game.player.inventory_bar.content+= [(Trash(self.game), 20), (Sorter(self.game), 5)]
+        self.game.player.inventory_bar.modify_amount(Trash(self.game), 20)
+        self.game.player.inventory_bar.modify_amount(Sorter(self.game), 5)
         return self.game.player.gain(100)
     def update_pourcentage(self):
         self.pourcentage_done= ((self.game.player.balance - self.init_credit) / 150) *100
@@ -137,7 +138,7 @@ class ABitHarder(Quest):
     def reset_index(self):
         self.checking_from_index = len(self.game.player.selled) -1
     def give_reward(self) -> None:
-        self.game.player.inventory_bar.content.append((Connecter(self.game), 5))
+        self.game.player.inventory_bar.modify_amount(Connecter(self.game), 5)
 
 class LovingMoney(Quest):
     def __init__(self, game) -> None:
@@ -148,6 +149,15 @@ class LovingMoney(Quest):
         self.pourcentage_done = (self.game.player.balance / 5000) * 100
     def give_reward(self) -> None:
         return super().give_reward()
+
+class SellerAndBuyer(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "Seller And Buyer!", "Buy an item from the shop (click 'm' to open it)")
+        self.bought= len(self.game.marked.bought)
+    def check_success(self) -> bool:
+        return len(self.game.marked.bought) > self.bought
+    def give_reward(self) -> None:
+        self.game.player.gain(100)
 
 class Finished(Quest):
     def __init__(self, game) -> None:

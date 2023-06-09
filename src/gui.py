@@ -4,34 +4,40 @@ from textures import get_texture
 from fonts import TEXT_FONT, TITLE_FONT
 
 class Button():
-    def __init__(self, game, rect: Rect, text: str, type: Literal["yes", "no"] | None = None, on_click: Callable[[], None] = lambda:0) -> None:
+    def __init__(self, game, rect: Rect, text: str, btn_type: Literal["yes", "no"] | None = None, on_click: Callable[[], None] = lambda:0) -> None:
+        """ If the draw_on surface is none, it will take the screen as the surface
+        """
+        
         from _main import Game
         self.game: Game = game
-
-        texture = get_texture("uis", f"button{f'_{type}' if type else ''}")
-        self.texture = transform.scale(texture, rect.size)
         self.rect= rect
         self.onclick = on_click
-        
-        font_size = rect.width / len(text)
-        font, font_rect = TITLE_FONT.render(text, size= font_size)
-        self.texture.blit(font, 
-            ((rect.width - font_rect.width)/2, (rect.height - font_rect.height)/2)
-        )
+        self.change_type(btn_type)
+
+        self.caption= text
+        self.active= False
 
         self.click_event_id = self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.clicked())
-
+    def change_type(self, btn_type: Literal["yes", "no"] | None = None):
+        texture= get_texture("uis", f"button{f'_{btn_type}' if btn_type else ''}")
+        self.texture= transform.scale(texture, self.rect.size)
     def draw(self):
-        self.game.draw(self.texture, self.rect.topleft)
+        texture= self.texture
+        font_size = self.rect.width / len(self.caption)
+        font, font_rect = TITLE_FONT.render(self.caption, size= font_size)
+        texture.blit(font, 
+            ((self.rect.width - font_rect.width)/2, (self.rect.height - font_rect.height)/2)
+        )
+
+        self.game.draw(texture, self.rect.topleft)
     def clicked(self):
-        if not mouse.get_pressed()[0]: return
-        #                         ^^^ = left click
+        if not (self.active and mouse.get_pressed()[0]): return
+        #                                          ^^^ = left click
         mx, my = mouse.get_pos()
         if (
             self.rect.left <= mx <= self.rect.right
             and self.rect.top <= my <= self.rect.bottom
         ):
-            self.game.rmv_handler(self.click_event_id)
             return self.onclick()
 
 class InventoryBar():
@@ -58,7 +64,9 @@ class InventoryBar():
         for index, (nav_block, amount) in enumerate(self.content):
             if type(nav_block) == type(block):
                 self.content[index]= (nav_block, max(0, amount + add))
-                break
+                return
+        # If python reach this point, that means that the item is not in the inventory, so we add it
+        self.content.append((block, max(0, add)))
     def get_rect(self):
         """ Returns the rect of the gui
         """
@@ -173,7 +181,7 @@ class Selector():
                 item
             ))
 
-        self.game.pygame.screen.blit(gui, (x, y))
+        self.game.draw(gui, (x, y))
     def clicked(self):
         if not (self.active and mouse.get_pressed()[0]): return
         #                                          ^^^ = left click 
@@ -212,15 +220,14 @@ class MarketGUI():
 
         self.game: Game = game
         self.content: dict[Block, float] = sellable
-        self.item_selector_ratio_rect = Rect(12, 16, 9, 9)
 
-        self.game.player.freeze_blocks_interaction = True
-        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = freeze_game
+        self.freezing= freeze_game
+        self.setfreeze(freeze_game)
         self.active= False
-    def update(self):
-        if key.get_pressed()[K_ESCAPE]:
-            return self.end()
+        self.active_item: Block | None= None
+        self.current_selector: Selector | None= None
 
+        # GUI Rect Set
         win_size= display.get_window_size()
         w, h = (
             win_size[0]/ 3.5,
@@ -230,37 +237,89 @@ class MarketGUI():
             (win_size[i] - (w, h)[i])/2
             for i in range(2)
         ]
-        gui= transform.scale(get_texture("uis", "market"), (w, h))
-
-        self.gui_rect= (
-            (x + self.box_padding/2, x + w - self.box_padding/2),
-            (y + self.box_padding/2, y + h - self.box_padding/2)
+        self.texture= transform.scale(get_texture("uis", "market"), (w, h))
+        
+        self.gui_rect= Rect(x, y, w, h)
+        self.item_selector_rect = Rect(
+            12*w /32, 16*h /64,
+            9*w /32,  9*h /64
         )
 
-        self.game.pygame.screen.blit(gui, (x, y))
-    def clicked(self):
-        if not (self.active and mouse.get_pressed()[0]): return
-        #                                          ^^^ = left click 
-        mx, my = mouse.get_pos()
+        button_w, button_h = w * .5, 50
+        self.confirm_button = Button(self.game, Rect(
+            x + (w - button_w)/2, y + self.gui_rect.height - 2* button_h,
+            button_w, button_h
+        ), "BUY", "no", lambda: self.buy())
 
+        self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.clicked())
+    def buy(self):
+        if not (self.active and self.active_item): return
+        item_price = self.content[self.active_item]
+        if item_price > self.game.player.balance: return
+        if self.game.DEV_MODE:
+            print(f"Player has bought {self.active_item.identifier} at ${item_price}.")
+
+        self.game.player.gain(-item_price)
+        self.game.player.inventory_bar.modify_amount(self.active_item, 1)
+        self.game.marked.bought.append((type(self.active_item), item_price))
+        return self.end()
+    def update(self):
+        if key.get_pressed()[K_ESCAPE] and not self.current_selector:
+            return self.end()
+
+        gui = self.texture.copy()
+        if self.active_item:
+            mask= Surface(self.item_selector_rect.size)
+            mask.fill((0, 0, 0))
+
+            item_texture = transform.scale(self.active_item.texture, self.item_selector_rect.size)
+
+            item_price = self.content[self.active_item]
+
+            price_surface, price_rect= TEXT_FONT.render(f"${round(item_price, 2)}", size= 15)
+            price_box_rect = Rect(
+                (self.gui_rect.width - price_rect.width)/2, self.item_selector_rect.bottom + price_rect.height,
+                *price_rect.size
+            )
+            
+            gui.blits((
+                (mask, self.item_selector_rect.topleft),
+                (item_texture, self.item_selector_rect.topleft),
+                (price_surface, price_box_rect.topleft)
+            ))
+        else:
+            self.confirm_button.active= False
+        self.game.draw(gui, self.gui_rect.topleft)
+        if self.active_item:
+            self.confirm_button.change_type("yes" if item_price <= self.game.player.balance else "no")
+            self.confirm_button.draw()
+    def clicked(self):
+        if not (self.active and mouse.get_pressed()[0]) or self.current_selector: return
+        #                                          ^^^ = left click 
         
-    def scrolling(self, scroll_y: int):
-        if not self.active: return
-        if scroll_y < 0 and not self.can_scroll_up:
-            self.scrollDown = 0
-            return
-        elif scroll_y > 0 and not self.can_scroll_down:
-            return
-        self.scrollDown+= scroll_y * self.scroll_speed
+        mx, my = mouse.get_pos()
+        translate_x, translate_y = self.gui_rect.topleft
+        if(
+            translate_x + self.item_selector_rect.left <= mx <= translate_x + self.item_selector_rect.right
+            and translate_y + self.item_selector_rect.top <= my <= translate_y + self.item_selector_rect.bottom
+        ):
+            self.confirm_button.active= False
+            self.current_selector = Selector(self.game, list(self.content.keys()))
+            selected = self.current_selector.get()
+            self.setfreeze(self.freezing)
+            self.current_selector = None
+            if not selected: return
+            self.active_item= selected
+            self.confirm_button.active= True
     def process(self):
         self.active= True
-        while not (self.choosed or self.game.update()) and self.active:
+        while self.active and not self.game.update():
             self.update()
         return self.end()
     def end(self):
         self.active= False
-        self.unfreeze()
-    def unfreeze(self):
-        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = False
+        self.setfreeze(False)
+    def setfreeze(self, freezing= False):
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = freezing
 
     
