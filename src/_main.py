@@ -83,13 +83,16 @@ class Game:
         self.DEV_MODE= DEV_MODE
         self.AllTheQuests: list[type[quests.Quest]]= quests.AllTheQuests
         self.freeze_process= False
-        self.cam= Camera(self)
+        self.require_drawing= []
+        self.cache: dict[str, any]= {}
+        self.intervals: dict[int, list[Callable[[Self, pg.event.Event], None]]] = {}
 
+        self.cam= Camera(self)
         self.map= map.Map(self)
         self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy())
         self.marked= market.Market(self)
-        self.require_drawing= []
-        self.cache: dict[str, any]= {}
+
+        self.add_event(PROCESS_EVENT, lambda g, e: self.__update_interval_functions__())
 
         # Shorthands
         self.screen= self.pygame.screen
@@ -132,6 +135,15 @@ class Game:
         return exit(0)
     
     # EVENT MANAGERS
+    def each(self, ms: int, *handlers: Callable[[Self, pg.event.Event], None]):
+        if not ms in self.intervals:
+            self.intervals[ms]= []
+        self.intervals[ms]+= list(handlers)
+    def __update_interval_functions__(self):
+        infos = self.time_infos
+        for ms, handlers in self.intervals.items():
+            if infos.time["ms"] % ms <= infos.approximated_at:
+                [f(self, pg.event.Event(PROCESS_EVENT, {"time": infos})) for f in handlers]
     def add_event(self, ev_identifier: Any, handler: Callable[[Self, pg.event.Event], None], once= False):
         """ Add an handler to an event
             Returns the handler's id

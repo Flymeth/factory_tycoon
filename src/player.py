@@ -165,7 +165,7 @@ class Player:
         # Balance
         balance_text_size= window_size[0] // 50
         balance_text_padding= balance_text_size
-        balance_text, balance_rect= TITLE_FONT_BOLD.render(f"Balance: ${self.balance}", fgcolor= (0, 0, 0), size= balance_text_size)
+        balance_text, balance_rect= TITLE_FONT_BOLD.render(f"Balance: ${round(self.balance, 2)}", fgcolor= (0, 0, 0), size= balance_text_size)
         balance_bg_texture= get_texture("uis", "balance_bg")
         balance_bg= transform.scale(balance_bg_texture, (
             balance_rect.width + balance_text_padding *2,

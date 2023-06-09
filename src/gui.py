@@ -1,7 +1,38 @@
 from pygame import Surface, display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE, Rect
-from typing import Any
+from typing import Any, Literal, Callable
 from textures import get_texture
-from fonts import TEXT_FONT
+from fonts import TEXT_FONT, TITLE_FONT
+
+class Button():
+    def __init__(self, game, rect: Rect, text: str, type: Literal["yes", "no"] | None = None, on_click: Callable[[], None] = lambda:0) -> None:
+        from _main import Game
+        self.game: Game = game
+
+        texture = get_texture("uis", f"button{f'_{type}' if type else ''}")
+        self.texture = transform.scale(texture, rect.size)
+        self.rect= rect
+        self.onclick = on_click
+        
+        font_size = rect.width / len(text)
+        font, font_rect = TITLE_FONT.render(text, size= font_size)
+        self.texture.blit(font, 
+            ((rect.width - font_rect.width)/2, (rect.height - font_rect.height)/2)
+        )
+
+        self.click_event_id = self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.clicked())
+
+    def draw(self):
+        self.game.draw(self.texture, self.rect.topleft)
+    def clicked(self):
+        if not mouse.get_pressed()[0]: return
+        #                         ^^^ = left click
+        mx, my = mouse.get_pos()
+        if (
+            self.rect.left <= mx <= self.rect.right
+            and self.rect.top <= my <= self.rect.bottom
+        ):
+            self.game.rmv_handler(self.click_event_id)
+            return self.onclick()
 
 class InventoryBar():
     def __init__(self, game, content: list[tuple[Any, int]] = []) -> None:
@@ -104,10 +135,7 @@ class Selector():
             (win_size[i] - (w, h)[i])/2
             for i in range(2)
         ]
-        gui= Surface((w, h))
-        bg= get_texture("uis", "selector_bg")
-        gui.blit(transform.scale(bg, (w, h)), (0, 0))
-
+        gui = transform.scale(get_texture("uis", "selector_bg"), (w, h))
         items_size= (w - 2*self.box_padding) / self.items_per_row - self.items_margin /2
 
         self.gui_rect= (
@@ -176,3 +204,63 @@ class Selector():
         return self.choosed
     def unfreeze(self):
         self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = False
+
+class MarketGUI():
+    def __init__(self, game, sellable: dict[Any, float], freeze_game: bool = True) -> None:
+        from blocks import Block
+        from _main import Game
+
+        self.game: Game = game
+        self.content: dict[Block, float] = sellable
+        self.item_selector_ratio_rect = Rect(12, 16, 9, 9)
+
+        self.game.player.freeze_blocks_interaction = True
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = freeze_game
+        self.active= False
+    def update(self):
+        if key.get_pressed()[K_ESCAPE]:
+            return self.end()
+
+        win_size= display.get_window_size()
+        w, h = (
+            win_size[0]/ 3.5,
+            win_size[1]/ 1.2
+        )
+        x, y = [
+            (win_size[i] - (w, h)[i])/2
+            for i in range(2)
+        ]
+        gui= transform.scale(get_texture("uis", "market"), (w, h))
+
+        self.gui_rect= (
+            (x + self.box_padding/2, x + w - self.box_padding/2),
+            (y + self.box_padding/2, y + h - self.box_padding/2)
+        )
+
+        self.game.pygame.screen.blit(gui, (x, y))
+    def clicked(self):
+        if not (self.active and mouse.get_pressed()[0]): return
+        #                                          ^^^ = left click 
+        mx, my = mouse.get_pos()
+
+        
+    def scrolling(self, scroll_y: int):
+        if not self.active: return
+        if scroll_y < 0 and not self.can_scroll_up:
+            self.scrollDown = 0
+            return
+        elif scroll_y > 0 and not self.can_scroll_down:
+            return
+        self.scrollDown+= scroll_y * self.scroll_speed
+    def process(self):
+        self.active= True
+        while not (self.choosed or self.game.update()) and self.active:
+            self.update()
+        return self.end()
+    def end(self):
+        self.active= False
+        self.unfreeze()
+    def unfreeze(self):
+        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = False
+
+    

@@ -19,6 +19,7 @@
 > market.py
 
 * finir la classe
+* finir le gui
 
 ## Blocks
 
