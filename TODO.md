@@ -36,9 +36,9 @@
 
 ## GUI
 
-> gui.py
+> gui/*.py
 
-* faire une classe principale
+* faire les classes `selector` et `marketgui` avec la classe `GUI`
 
 ## Other
 

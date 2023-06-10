@@ -3,7 +3,8 @@ from items import Item, Stone
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface, Rect
-from gui import Selector
+from gui.selector import Selector
+from typing import Self
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 1) -> None:
@@ -92,6 +93,7 @@ class Block:
     def edit(self) -> bool: pass
     def fast_edit(self) -> bool: pass
     def postprocessing(self, texture: Surface) -> Surface: return texture
+    def duplicate(self) -> Self: return self.__class__(self.game)
     def __str__(self) -> str:
         return self.identifier[0].upper()
 

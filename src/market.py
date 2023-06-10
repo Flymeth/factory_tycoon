@@ -1,7 +1,6 @@
 from items import Item
-from custom_events_identifier import PROCESS_EVENT
 from blocks import *
-from gui import MarketGUI
+from gui.market import MarketGUI
 
 class Market:
     def __init__(self, game) -> None:

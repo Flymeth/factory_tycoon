@@ -1,7 +1,8 @@
 from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock
 from items import Item
-from gui import InventoryBar
+from gui._assets import GUI
+from gui.inventory_bar import InventoryBar
 from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
@@ -27,7 +28,7 @@ class Player:
         self.selled: list[Item]= []
 
         self.inventory_bar = InventoryBar(game, [(Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)])
-        self.inventory_bar.selected= 0
+        self.inventory_bar.set_selected_item(0)
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
         self.game.add_event(KEYDOWN, lambda g, e: self.key_pressed(e.key))
@@ -36,7 +37,7 @@ class Player:
         ))
         self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator())
 
-        self.uis_rects: list[Rect] = [self.inventory_bar.get_rect()]
+        self.uis: list[GUI] = [self.inventory_bar]
         self.freeze_blocks_interaction= False
         pass
     def quest_updator(self):
@@ -62,8 +63,8 @@ class Player:
     def key_pressed(self, key: int):
         if key in keys_index:
             index= keys_index.index(key)
-            if index >= len(self.inventory_bar.content): return
-            self.inventory_bar.selected= index
+            if index >= len(self.inventory_bar.items): return
+            self.inventory_bar.set_selected_item(index)
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
             return
@@ -97,7 +98,8 @@ class Player:
             self.game.map.actualize(cursor)
     def mouse_pos_type(self) -> Literal["block", "ui"]:
         x, y = mouse.get_pos()
-        for rect in self.uis_rects:
+        for ui in self.uis:
+            rect= ui.rect
             if(
                 rect.left <= x <= rect.left + rect.width
                 and  rect.top <= y <= rect.top + rect.height
@@ -108,7 +110,7 @@ class Player:
         if not button in (1, 3): return # 1 = left click; 3 = right click
         if self.freeze_blocks_interaction: return
         mouse_position= mouse.get_pos()
-        navbar_rect= self.inventory_bar.get_rect()
+        navbar_rect= self.inventory_bar.rect
         if self.game.DEV_MODE:
             print("CLICKED POSITION & GUI RECT:")
             print(mouse_position, navbar_rect)
@@ -120,11 +122,11 @@ class Player:
         ):
             gui_mouse_position_x = mouse_position[0] - navbar_rect.topleft[0]
             index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings)
-            if index >= len(self.inventory_bar.content) or self.inventory_bar.content[index][1] == 0:
+            if index >= len(self.inventory_bar.items):
                 return
-            if self.game.DEV_MODE:
+            if self.inventory_bar.set_selected_item(index) and self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
-            self.inventory_bar.selected = index
+            
         elif self.mouse_pos_type() == "block":
             if self.game.DEV_MODE:
                 print(f"ACTION: {'placed' if button == 1 else 'removed'} block.")
@@ -138,14 +140,14 @@ class Player:
                     print(err)
     def place(self):
         assert self.game, "Cannot perform this action because the game object is required"
-        assert self.inventory_bar.selected >= 0, "Player has not selected an item"
         coordonates = self.game.cam.get_cursor_coordonates()
         assert coordonates, "Invalid cursor position"
-        block = self.inventory_bar.get_selected_block()
-        if not block: return
-        placed= self.game.map.place(block, coordonates)
+        item = self.inventory_bar.get_selected_item()
+        assert item, "Player has not selected an item"
+        assert item.amount, "Player has not enought of this item"
+        placed= self.game.map.place(item.take_one(), coordonates)
         if placed:
-            self.inventory_bar.modify_amount(block, -1)
+            self.inventory_bar.modify_amount(item.item, -1)
     def remove(self):
         assert self.game, "Cannot perform this action because the game object is required"
         block = self.game.map.delete(self.game.cam.get_cursor_coordonates())
@@ -157,8 +159,9 @@ class Player:
         current_block= self.game.map.get_block(*coordonates)
         if not isinstance(current_block, FloorBlock): return
 
-        inv= self.inventory_bar
-        block, amount = inv.content[inv.selected]
+        selected = self.inventory_bar.get_selected_item()
+        if not selected: return
+        block, amount = selected.item, selected.amount
         if not amount: return
         block._cache_coordonates= coordonates
         rect = block.get_rect()
