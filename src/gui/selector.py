@@ -1,16 +1,15 @@
-from pygame import display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE
+from pygame import display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE, Rect
 from typing import Any
 from textures import get_texture
+from gui._assets import Page
 
-class Selector():
+class Selector(Page):
     def __init__(self, game, choices: list[Any], items_per_row= 3, freeze_game= False, scroll_speed = 5) -> None:
         assert choices, "Invalid choices provided (it must be a list with at least 1 element"
-
-        from _main import Game
         from items import Item
         from blocks import Block
 
-        self.game: Game= game
+
         self.choices: list[Item | Block]= choices
         self.choosed: Block | Item | None= None
         self.scrollDown= 0
@@ -18,21 +17,6 @@ class Selector():
         self.items_margin= 5
         self.box_padding = 10
         self.scroll_speed = scroll_speed
-
-        self.game.player.freeze_blocks_interaction = True
-        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = freeze_game
-        self.active= False
-
-        self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked())
-        self.game.add_event(MOUSEWHEEL, lambda g, e: self.scrolling(e.y))
-        self.rects: list[tuple[tuple[float], tuple[float], Block | Item]]= [] # (coordonates_tl, coordonates_br, item)
-        self.gui_rect: tuple[tuple[float], tuple[float]]= ((0, 0), (0, 0)) # (coordonates_tl, coordonates_br)
-        self.can_scroll_down= False
-        self.can_scroll_up= False
-        pass
-    def update(self):
-        if key.get_pressed()[K_ESCAPE]:
-            return self.end()
 
         win_size= display.get_window_size()
         w, h = (
@@ -44,11 +28,22 @@ class Selector():
             for i in range(2)
         ]
         gui = transform.scale(get_texture("uis", "selector_bg"), (w, h))
-        items_size= (w - 2*self.box_padding) / self.items_per_row - self.items_margin /2
+        super().__init__(game, Rect(x, y, w, h), gui)
+
+        self.set_freezing(True, True)
+
+        self.rects: list[tuple[tuple[float], tuple[float], Block | Item]]= [] # (coordonates_tl, coordonates_br, item)
+        self.gui_rect: tuple[tuple[float], tuple[float]]= ((0, 0), (0, 0)) # (coordonates_tl, coordonates_br)
+        self.can_scroll_down= False
+        self.can_scroll_up= False
+        pass
+    def get_texture(self):
+        gui = self.background.copy()
+        items_size= (self.rect.width - 2*self.box_padding) / self.items_per_row - self.items_margin /2
 
         self.gui_rect= (
-            (x + self.box_padding/2, x + w - self.box_padding/2),
-            (y + self.box_padding/2, y + h - self.box_padding/2)
+            (self.rect.left + self.box_padding/2, self.rect.right - self.box_padding/2),
+            (self.rect.top + self.box_padding/2, self.rect.bottom - self.box_padding/2)
         )
 
         self.rects= []
@@ -61,7 +56,7 @@ class Selector():
             ]
             item_y+= self.scrollDown
             if not (
-                -items_size <= item_y <= h
+                -items_size <= item_y <= self.rect.height
             ): 
                 if not index:
                     self.can_scroll_up= True
@@ -81,10 +76,8 @@ class Selector():
                 item
             ))
 
-        self.game.draw(gui, (x, y))
-    def clicked(self):
-        if not (self.active and mouse.get_pressed()[0]): return
-        #                                          ^^^ = left click 
+        return gui
+    def on_click(self):
         mouse_position = mouse.get_pos()
         for tl, br, item in self.rects:
             if (
@@ -92,6 +85,7 @@ class Selector():
                 and tl[1] <= mouse_position[1] <= br[1]
             ):
                 self.choosed= item
+                self.active= False
                 break
     def scrolling(self, scroll_y: int):
         if not self.active: return
@@ -102,13 +96,8 @@ class Selector():
             return
         self.scrollDown+= scroll_y * self.scroll_speed
     def get(self) -> Any | None:
-        self.active= True
-        while not (self.choosed or self.game.update()) and self.active:
-            self.update()
-        return self.end()
-    def end(self):
-        self.active= False
-        self.unfreeze()
+        self.process()
         return self.choosed
-    def unfreeze(self):
-        self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = self.game.player.freeze_blocks_interaction = False
+    def on_end(self):
+        self.set_freezing(False, True)
+        return self.choosed

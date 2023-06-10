@@ -36,7 +36,10 @@ class Market:
             print(f"Items value has been decreased.")
     def open_market(self):
         assert not self.is_market_open, "Tried to open market twice"
-        sellable = {Element(self.game): value for Element, value in self.shop.items()}
+        sellable = {}
+        for Element, price in self.shop.items():
+            item= Element(self.game)
+            sellable[item] = price * self.get_court(item)
         gui = MarketGUI(self.game, sellable)
         self.is_market_open= True
         gui.process()

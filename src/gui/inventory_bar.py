@@ -1,7 +1,7 @@
 from typing import Any
 from pygame import Surface, Rect, transform, display
 from fonts import TEXT_FONT
-from gui._assets import GUI
+from gui._assets import Page
 
 class InventoryItem():
     def __init__(self, game, amount: int, item: Any, rect: Rect) -> None:
@@ -34,7 +34,7 @@ class InventoryItem():
         self.item= block.duplicate()
         return block
 
-class InventoryBar(GUI):
+class InventoryBar(Page):
     def __init__(self, game, content: list[tuple[Any, int]] = []) -> None:
         from _main import Game
 

@@ -152,7 +152,7 @@ class LovingMoney(Quest):
 
 class SellerAndBuyer(Quest):
     def __init__(self, game) -> None:
-        super().__init__(game, "Seller And Buyer!", "Buy an item from the shop (click 'm' to open it)")
+        super().__init__(game, "Seller And Buyer!", "Buy an item from the shop (click 'm' to the shop)")
         self.bought= len(self.game.marked.bought)
     def check_success(self) -> bool:
         return len(self.game.marked.bought) > self.bought

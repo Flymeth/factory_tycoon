@@ -4,6 +4,9 @@ import map
 import player
 import quests
 import market
+import gui
+import utils
+from utils import properties
 from direction_sys import Direction
 from typing import Callable, Any, Self
 import pygame as pg
@@ -11,7 +14,7 @@ from camera import Camera
 from textures import create_surface
 from custom_events_identifier import *
 
-DEV_MODE= True
+DEV_MODE: bool= properties.game_properties.get("DEV_MODE")
 
 class TimeInformation():
     MS_TIMER_INTERVAL= 1
@@ -46,6 +49,8 @@ class Modules:
     player= player
     quests= quests
     market= market
+    gui= gui
+    utils= utils
 
 class Pygame():
     def __init__(self, fps: int) -> None:
@@ -80,6 +85,7 @@ class Game:
         self.next_event_id= 0
         self.events: dict[str, list[tuple[int, Callable[[Self, pg.event.Event], None], bool]]]= {}
         self.running= True
+        self.properties= properties.game_properties
         self.DEV_MODE= DEV_MODE
         self.AllTheQuests: list[type[quests.Quest]]= quests.AllTheQuests
         self.freeze_process= False

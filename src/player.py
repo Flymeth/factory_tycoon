@@ -1,7 +1,7 @@
 from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock
 from items import Item
-from gui._assets import GUI
+from gui._assets import Page
 from gui.inventory_bar import InventoryBar
 from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
@@ -37,7 +37,7 @@ class Player:
         ))
         self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator())
 
-        self.uis: list[GUI] = [self.inventory_bar]
+        self.uis: list[Page] = [self.inventory_bar]
         self.freeze_blocks_interaction= False
         pass
     def quest_updator(self):
@@ -81,7 +81,7 @@ class Player:
         block = self.game.map.get_block(*cursor)
         is_visualisationBlock= False
         if isinstance(block, FloorBlock):
-            block= self.inventory_bar.content[self.inventory_bar.selected][0]
+            block= self.inventory_bar.get_selected_item().item
             is_visualisationBlock= True
         if not block: return
         actualisation_required= False

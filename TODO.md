@@ -38,12 +38,10 @@
 
 > gui/*.py
 
-* faire les classes `selector` et `marketgui` avec la classe `GUI`
-
 ## Other
 
 > main project
 
 * Faire de l'optimisation lors de la génération de chunks
-* Revoir 2/3 bouts de code qui ne sont pas propre dutous (nottament dans les classes GUI)
+* Revoir 2/3 bouts de code qui ne sont pas propre dutous (nottament dans les classes des GUI)
 * **se laver**
