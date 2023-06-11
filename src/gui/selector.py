@@ -1,10 +1,10 @@
-from pygame import display, transform, MOUSEBUTTONDOWN, mouse, MOUSEWHEEL, key, K_ESCAPE, Rect
+from pygame import display, transform, mouse, Rect
 from typing import Any
 from textures import get_texture
 from gui._assets import Page
 
 class Selector(Page):
-    def __init__(self, game, choices: list[Any], items_per_row= 3, freeze_game= False, scroll_speed = 5) -> None:
+    def __init__(self, game, choices: list[Any], items_per_row= 3, freeze_game= True, scroll_speed = 5) -> None:
         assert choices, "Invalid choices provided (it must be a list with at least 1 element"
         from items import Item
         from blocks import Block
@@ -30,7 +30,7 @@ class Selector(Page):
         gui = transform.scale(get_texture("uis", "selector_bg"), (w, h))
         super().__init__(game, Rect(x, y, w, h), gui)
 
-        self.set_freezing(True, True)
+        self.set_freezing(freeze_game, True)
 
         self.rects: list[tuple[tuple[float], tuple[float], Block | Item]]= [] # (coordonates_tl, coordonates_br, item)
         self.gui_rect: tuple[tuple[float], tuple[float]]= ((0, 0), (0, 0)) # (coordonates_tl, coordonates_br)

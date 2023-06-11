@@ -15,22 +15,23 @@ class MarketGUI(Page):
 
         # GUI Rect Set
         win_size= display.get_window_size()
-        w, h = (
-            win_size[0]/ 3.5,
-            win_size[1]/ 1.3
-        )
+        texture= get_texture("uis", "market")
+        texture_rect= texture.get_rect()
+        
+        gui_height= win_size[1] - 50
+        gui_width = texture_rect.width * gui_height/texture_rect.height
         x, y = [
-            (win_size[i] - (w, h)[i])/2
+            (win_size[i] - (gui_width, gui_height)[i])/2
             for i in range(2)
         ]
-        super().__init__(game, Rect(x, y, w, h), transform.scale(get_texture("uis", "market"), (w, h)))
+        super().__init__(game, Rect(x, y, gui_width, gui_height), transform.scale(texture, (gui_width, gui_height)))
         
         self.selector_rect = Rect(
-            12*w /32, 16*h /64,
-            9*w /32,  9*h /64
+            18*gui_width /44, 16*gui_height /64,
+            9*gui_width /44,  9*gui_height /64
         )
-        button_w = min(200, w * .5)
-        button_h = button_w/2
+        button_w = min(200, gui_width * .5)
+        button_h = button_w/3
         self.confirm_button = Button(self.game, Rect(
             self.rect.left + (self.rect.width - button_w)/2, self.rect.bottom - button_h - 20,
             button_w, button_h

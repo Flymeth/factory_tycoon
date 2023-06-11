@@ -1,7 +1,8 @@
-from pygame import Rect, Surface, mouse, MOUSEBUTTONDOWN, transform, KEYDOWN, key, K_ESCAPE
+from pygame import Rect, Surface, mouse, transform, KEYDOWN, key, K_ESCAPE
 from textures import no_texture, get_texture
 from typing import Literal, Callable, Self
 from fonts import TITLE_FONT
+from custom_events_identifier import LEFT_CLICK
 
 class Page():
     def __init__(self, game, rect: Rect, background: Surface, parent: Surface | None = None) -> None:
@@ -14,7 +15,7 @@ class Page():
         self.active: bool= True
         self.child_page: Self | None= None
 
-        self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.__handle_click__())
+        self.game.add_event(LEFT_CLICK, lambda g, e: self.__handle_click__())
         self.game.add_event(KEYDOWN, lambda g,e: self.__handle_keydown__())
     @property
     def _global_rect(self) -> Rect:
@@ -24,7 +25,7 @@ class Page():
             *self.rect.size
         )
     def __handle_click__(self):
-        if not (self.active and mouse.get_pressed()[0]) or self.child_page: return
+        if not self.active or self.child_page: return
         mx, my = mouse.get_pos()
         rect= self._global_rect
         if (
@@ -67,7 +68,7 @@ class Button():
         self.caption= text
         self.active= False
 
-        self.click_event_id = self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.__clicked__())
+        self.click_event_id = self.game.add_event(LEFT_CLICK, lambda g,e: self.__clicked__())
     def change_type(self, btn_type: Literal["yes", "no"] | None = None):
         texture= get_texture("uis", f"button{f'_{btn_type}' if btn_type else ''}")
         self.texture= transform.scale(texture, self.rect.size)
@@ -82,8 +83,7 @@ class Button():
     def draw(self):
         self.game.draw(self.get_texture(), self.rect.topleft)
     def __clicked__(self):
-        if not (self.active and mouse.get_pressed()[0]): return
-        #                                          ^^^ = left click
+        if not self.active: return
         mx, my = mouse.get_pos()
         if (
             self.rect.left <= mx <= self.rect.right

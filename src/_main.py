@@ -92,17 +92,31 @@ class Game:
         self.require_drawing= []
         self.cache: dict[str, any]= {}
         self.intervals: dict[int, list[Callable[[Self, pg.event.Event], None]]] = {}
+        self.__mouse_clicking_position: list[int]= []
 
         self.cam= Camera(self)
         self.map= map.Map(self)
-        self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy())
+        self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy(), default_balance= 0)
         self.marked= market.Market(self)
 
         self.add_event(PROCESS_EVENT, lambda g, e: self.__update_interval_functions__())
+        self.add_event(pg.MOUSEBUTTONDOWN, lambda g, e: self.__mouse_clicking__(e.button, True))
+        self.add_event(pg.MOUSEBUTTONUP, lambda g, e: self.__mouse_clicking__(e.button, False))
 
         # Shorthands
         self.screen= self.pygame.screen
         self.draw= self.screen.blit
+    def __mouse_clicking__(self, button: int, active: bool):
+        if button in self.__mouse_clicking_position:
+            if not active:
+                self.__mouse_clicking_position.remove(button)
+                event = (
+                    LEFT_CLICK if button == 1 else
+                    MIDDLE_CLICK if button == 2 else RIGHT_CLICK
+                )
+                self.fire_event(event, pg.event.Event(event))
+        elif active:
+            self.__mouse_clicking_position.append(button)
     @property
     def time_infos(self) -> TimeInformation:
         """ Get time informations since the app started

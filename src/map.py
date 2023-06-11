@@ -267,12 +267,9 @@ class Map:
         deleted._cache_coordonates= None
 
         # Remove connections
-        for connection_in, block in deleted.connected["in"]:
-            connection_out= block.outputs.index((deleted.inputs[connection_in] +2)%4)
-            block.connected["out"].remove((connection_out, deleted))
-        for connection_out, block in deleted.connected["out"]:
-            connection_in= block.inputs.index((deleted.outputs[connection_out] +2) %4)
-            block.connected["in"].remove((connection_in, deleted))
+        for _, block in deleted.connected["in"] + deleted.connected["out"]:
+            for connection_type in ("in", "out"):
+                block.connected[connection_type] = [connection for connection in block.connected[connection_type] if connection[1] != deleted]
         deleted.connected["in"]= []
         deleted.connected["out"]= []
         # --------------------------------------------------------------
