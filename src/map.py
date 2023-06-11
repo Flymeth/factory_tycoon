@@ -27,15 +27,17 @@ class Map:
         time_infos= self.game.time_infos
         blocks = self.requires_processing
 
+        can_be_updated: Callable[[int], bool]= lambda update_interval: time_infos.time["ms"]%update_interval <= time_infos.approximated_at/2
+
         # Updating each blocks (if required)
         [
             block.exec()
             for block in blocks
-            if time_infos.time["ms"]%block.update_interval <= time_infos.approximated_at/2
+            if can_be_updated(block.update_interval)
         ]
-        # Distributing items --> do it after updates to avoid 'fast travel'
+        # Distributing items --> do it after updates to avoid 'fast travelings'
         for block in blocks:
-            if block.processed_items and block.connected["out"]:
+            if block.processed_items and block.connected["out"] and can_be_updated(block.update_interval):
                 valid_outputs_indexes: list[int]= []
                 if type(block.next_item_output) == Direction.single:
                     if not (block.next_item_output in block.outputs): continue
@@ -266,13 +268,13 @@ class Map:
 
         # Remove connections
         for connection_in, block in deleted.connected["in"]:
-            if block == deleted:
-                connection_out= (connection_in+2) %4
-                block.connected["out"].remove((connection_out, deleted))
+            connection_out= block.outputs.index((deleted.inputs[connection_in] +2)%4)
+            block.connected["out"].remove((connection_out, deleted))
         for connection_out, block in deleted.connected["out"]:
-            if block == deleted:
-                connection_in= (connection_in+2) %4
-                block.connected["in"].remove((connection_in, deleted))
+            connection_in= block.inputs.index((deleted.outputs[connection_out] +2) %4)
+            block.connected["in"].remove((connection_in, deleted))
+        deleted.connected["in"]= []
+        deleted.connected["out"]= []
         # --------------------------------------------------------------
         self.matrice[x][y]= deleted.block_bellow
         return deleted

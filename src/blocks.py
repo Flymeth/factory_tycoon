@@ -4,7 +4,7 @@ from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface, Rect
 from gui.selector import Selector
-from typing import Self
+from typing import Self, Literal
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 1) -> None:
@@ -16,7 +16,7 @@ class Block:
         self.inputs= inputs
         self.outputs= outputs
         self.locked= False
-        self.connected: dict[str, list[tuple[int, Block]]]= {
+        self.connected: dict[Literal["out", "in"], list[tuple[int, Block]]]= {
             "in": [],
             "out": []
         }
@@ -93,7 +93,10 @@ class Block:
     def edit(self) -> bool: pass
     def fast_edit(self) -> bool: pass
     def postprocessing(self, texture: Surface) -> Surface: return texture
-    def duplicate(self) -> Self: return self.__class__(self.game)
+    def duplicate(self) -> Self:
+        new_block = self.__class__(self.game)
+        new_block.right_rotations= self.right_rotations
+        return new_block
     def __str__(self) -> str:
         return self.identifier[0].upper()
 
@@ -136,7 +139,7 @@ class Generator(Block):
         self.spawn_chance= ingot_spawn_chance
         self.change_extractor(ingot_type)
     def exec(self):
-        if len(self.processed_items) > 2: return
+        if not self.connected["out"]: return
         self.processed_items.append(
             (self.extracts if random() <= self.spawn_chance else choice(self.others)) # Ici on séléctionne la classe adécquate
             (self.game) # Et ici on instancie cette classe
@@ -217,7 +220,7 @@ class Sorter(Block):
 class Convoyer(Block):
     def __init__(self, game) -> None:
         super().__init__(game, identifier="convoyer_belt", inputs=Direction.fast("s"), outputs= Direction.fast("n"), texture= "covoyer/straigth", max_storage_item= 3)
-        self.turned: int | False= False
+        self.turned: int | Literal[False]= False
         self.__anim_items: list[tuple[Item, float]]= [] # (item, animation_state)[]
     def set_turned(self, turn_direction: Direction.single):
         assert turn_direction in Direction.fast("h"), "Invalid turn direction has been set"
@@ -295,10 +298,18 @@ class Convoyer(Block):
                 self.__anim_items[index][1]= new_anim_state
             texture.blit(item_texture, item_position)
         return texture
+    def duplicate(self) -> Self:
+        new_block= super().duplicate()
+        new_block.set_straight()
+        if self.turned:
+            new_block.right_rotations+= self.turned
+            new_block.right_rotations%= 4
+        return new_block
+
 
 class Connecter(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100, max_storage_item= float("inf"))
+        super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100, max_storage_item= 2)
     def exec(self):
         self.processed_items+= [*self.processing_items]
         self.processing_items= []

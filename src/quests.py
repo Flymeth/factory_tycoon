@@ -142,17 +142,17 @@ class ABitHarder(Quest):
 
 class LovingMoney(Quest):
     def __init__(self, game) -> None:
-        super().__init__(game, "We all love money...", "Achieve 5000 credits. (We recommend you to make a big factory)")
+        super().__init__(game, "We all love money...", "Achieve 3500 credits. (We recommend you to make a big factory)")
     def check_success(self) -> bool:
-        return self.game.player.balance >= 5000
+        return self.game.player.balance >= 3500
     def update_pourcentage(self):
-        self.pourcentage_done = (self.game.player.balance / 5000) * 100
+        self.pourcentage_done = (self.game.player.balance / 3500) * 100
     def give_reward(self) -> None:
         return super().give_reward()
 
 class SellerAndBuyer(Quest):
     def __init__(self, game) -> None:
-        super().__init__(game, "Seller And Buyer!", "Buy an item from the shop (click 'm' to the shop)")
+        super().__init__(game, "Seller And Buyer!", "Buy an item from the shop (click 'm' to open the shop)")
         self.bought= len(self.game.marked.bought)
     def check_success(self) -> bool:
         return len(self.game.marked.bought) > self.bought

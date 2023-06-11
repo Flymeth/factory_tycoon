@@ -1,9 +1,9 @@
 from typing import Any
-from pygame import display, Rect, Surface, transform, K_ESCAPE, MOUSEBUTTONDOWN, mouse, key
+from pygame import display, Rect, transform, mouse, Surface
 from gui.selector import Selector
 from gui._assets import Button, Page
 from textures import get_texture
-from fonts import TEXT_FONT
+from fonts import TEXT_FONT, TITLE_FONT_BOLD, auto_wrap
 
 class MarketGUI(Page):
     def __init__(self, game, sellable: dict[Any, float], freeze_game: bool = True) -> None:
@@ -17,7 +17,7 @@ class MarketGUI(Page):
         win_size= display.get_window_size()
         w, h = (
             win_size[0]/ 3.5,
-            win_size[1]/ 1.2
+            win_size[1]/ 1.3
         )
         x, y = [
             (win_size[i] - (w, h)[i])/2
@@ -29,9 +29,10 @@ class MarketGUI(Page):
             12*w /32, 16*h /64,
             9*w /32,  9*h /64
         )
-        button_w, button_h = w * .5, 50
+        button_w = min(200, w * .5)
+        button_h = button_w/2
         self.confirm_button = Button(self.game, Rect(
-            self.rect.left + (self.rect.width - button_w)/2, self.rect.top + self.rect.height - 2* button_h,
+            self.rect.left + (self.rect.width - button_w)/2, self.rect.bottom - button_h - 20,
             button_w, button_h
         ), "BUY", "no", lambda: self.buy())
 
@@ -52,7 +53,7 @@ class MarketGUI(Page):
         gui = self.background.copy()
         if self.active_item:
             mask= Surface(self.selector_rect.size)
-            mask.fill((0, 0, 0))
+            mask.fill((30,) * 3)
 
             item_texture = transform.scale(self.active_item.texture, self.selector_rect.size)
 
@@ -79,6 +80,15 @@ class MarketGUI(Page):
             )
         else:
             self.confirm_button.active= False
+        
+        # Titles and sub
+        title, title_rect= TITLE_FONT_BOLD.render("The Shop", size= 30)
+        sub, sub_rect = auto_wrap(TEXT_FONT, 15, "Click on the item to modify your selection".upper(), self.rect.width - 10, 'center', paragraphes_spacement= 5)
+
+        gui.blits((
+            (title, ((self.rect.width - title_rect.width)/2, 20)),
+            (sub, ((self.rect.width - sub_rect.width)/2, self.rect.centery))
+        ))
         return gui
     def on_click(self):
         mx, my = mouse.get_pos()

@@ -3,7 +3,7 @@ from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, 
 from items import Item
 from gui._assets import Page
 from gui.inventory_bar import InventoryBar
-from pygame import MOUSEBUTTONDOWN, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
+from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal
@@ -26,20 +26,30 @@ class Player:
         self.active_quest: Quest | None = None
         self.achieved_quests: list[Quest]= []
         self.selled: list[Item]= []
+        self.__is_clicking: list[int]= []
 
         self.inventory_bar = InventoryBar(game, [(Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)])
         self.inventory_bar.set_selected_item(0)
 
-        self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.clicked(e.button))
+        self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.__set_clicking__(True, e.button))
+        self.game.add_event(MOUSEBUTTONUP, lambda g, e: (
+            self.__set_clicking__(False, e.button), self.clicked(e.button)
+        ))
         self.game.add_event(KEYDOWN, lambda g, e: self.key_pressed(e.key))
         self.game.add_event(DRAW_EVENT, lambda g, e: (
-            self.draw_blockVisualisation(), self.inventory_bar.draw(), self.draw_hud()
+            self.draw_blockVisualisation(), self.inventory_bar.draw(), self.draw_hud(), self.handle_long_click()
         ))
         self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator())
 
         self.uis: list[Page] = [self.inventory_bar]
         self.freeze_blocks_interaction= False
         pass
+    def __set_clicking__(self, active: bool, btn: int):
+        is_containing= btn in self.__is_clicking
+        if is_containing and not active:
+            self.__is_clicking.remove(btn)
+        elif active and not is_containing:
+            self.__is_clicking.append(btn)
     def quest_updator(self):
         if not self.quests: return
         if not self.active_quest:
@@ -106,38 +116,41 @@ class Player:
             ):
                 return "ui"
         return "block"
-    def clicked(self, button: int):
+    def handle_long_click(self):
+        if not self.__is_clicking: return
+        if self.freeze_blocks_interaction or self.mouse_pos_type() != "block": return
+        button= self.__is_clicking[0]
         if not button in (1, 3): return # 1 = left click; 3 = right click
-        if self.freeze_blocks_interaction: return
-        mouse_position= mouse.get_pos()
+
+        if self.game.DEV_MODE:
+            print(f"ACTION: {'placed' if button == 1 else 'removed'} block.")
+        try:
+            if button == 1:
+                self.place()
+            else: self.remove()
+        except AssertionError as err:
+            if self.game.DEV_MODE:
+                print("ERROR WHEN WANTING TO DO THIS ACTION:")
+                print(err)
+    def clicked(self, button: int):
+        if self.freeze_blocks_interaction or self.mouse_pos_type() != "ui": return
+        if button != 1: return # 1 = left click
+        mx, my= mouse.get_pos()
         navbar_rect= self.inventory_bar.rect
         if self.game.DEV_MODE:
             print("CLICKED POSITION & GUI RECT:")
-            print(mouse_position, navbar_rect)
+            print((mx, my), navbar_rect)
 
         if(
-            len([None for i in range(2)
-                if navbar_rect.topleft[i] <= mouse_position[i] <= navbar_rect.topleft[i] + navbar_rect.size[i]
-            ]) == 2
+            navbar_rect.left <= mx <= navbar_rect.right
+            and navbar_rect.top <= my <= navbar_rect.bottom
         ):
-            gui_mouse_position_x = mouse_position[0] - navbar_rect.topleft[0]
+            gui_mouse_position_x = mx - navbar_rect.topleft[0]
             index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings)
             if index >= len(self.inventory_bar.items):
                 return
             if self.inventory_bar.set_selected_item(index) and self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
-            
-        elif self.mouse_pos_type() == "block":
-            if self.game.DEV_MODE:
-                print(f"ACTION: {'placed' if button == 1 else 'removed'} block.")
-            try:
-                if button == 1:
-                    self.place()
-                else: self.remove()
-            except AssertionError as err:
-                if self.game.DEV_MODE:
-                    print("ERROR WHEN WANTING TO DO THIS ACTION:")
-                    print(err)
     def place(self):
         assert self.game, "Cannot perform this action because the game object is required"
         coordonates = self.game.cam.get_cursor_coordonates()
