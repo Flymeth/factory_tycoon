@@ -37,26 +37,33 @@ class Map:
         ]
         # Distributing items --> do it after updates to avoid 'fast travelings'
         for block in blocks:
-            if block.processed_items and block.connected["out"] and can_be_updated(block.update_interval):
-                valid_outputs_indexes: list[int]= []
-                if type(block.next_item_output) == Direction.single:
-                    if not (block.next_item_output in block.outputs): continue
-                    valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
-                else:
-                    for direction in block.next_item_output:
-                        if not direction in block.outputs: continue
-                        valid_outputs_indexes.append(block.outputs.index(direction))
-                if not valid_outputs_indexes: continue
-                
-                valid_blocks= [
-                    out_block
-                    for index, out_block in block.connected["out"]
-                    if index in valid_outputs_indexes
-                ]
-                if not valid_blocks: continue
-                out_block= choice(valid_blocks)
-                if len(out_block.processing_items + out_block.processed_items) < out_block.max_storage:
-                    out_block.processing_items.append(block.processed_items.pop(0))
+            if can_be_updated(block.update_interval):
+                # Changeing item's temperature
+                for item in block.processing_items + block.processed_items:
+                    if item.temperature:
+                        item.temperature-= 1/10
+                # Distributes item
+                if block.processed_items and block.connected["out"]:
+                    valid_outputs_indexes: list[int]= []
+                    if type(block.next_item_output) == Direction.single:
+                        if not (block.next_item_output in block.outputs): continue
+                        valid_outputs_indexes.append(block.outputs.index(block.next_item_output))
+                    else:
+                        for direction in block.next_item_output:
+                            if not direction in block.outputs: continue
+                            valid_outputs_indexes.append(block.outputs.index(direction))
+                    if not valid_outputs_indexes: continue
+                    
+                    valid_blocks= [
+                        out_block
+                        for index, out_block in block.connected["out"]
+                        if index in valid_outputs_indexes
+                    ]
+                    if not valid_blocks: continue
+                    out_block= choice(valid_blocks)
+                    if len(out_block.processing_items + out_block.processed_items) < out_block.max_storage:
+                        if not out_block.item_predicate(block.processed_items[0]): continue
+                        out_block.processing_items.append(block.processed_items.pop(0))
         
     def check_and_generate_chunks(self):
         assert self.game, "Cannot check and generate chunks automatically without the game object"

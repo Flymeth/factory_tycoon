@@ -1,7 +1,7 @@
 from pygame import Rect, Surface, display
 from fonts import TITLE_FONT, TEXT_FONT, auto_wrap
-from items import IronIngot, GoldIngot
-from blocks import Sorter, Trash, FloorBlock, Connecter
+from items import IronIngot, GoldIngot, IronPlate, GoldPlate
+from blocks import Sorter, Trash, FloorBlock, Connecter, Press, Smelter
 import colors
 
 class Quest:
@@ -158,6 +158,19 @@ class SellerAndBuyer(Quest):
         return len(self.game.marked.bought) > self.bought
     def give_reward(self) -> None:
         self.game.player.gain(100)
+        self.game.player.inventory_bar.modify_amount(Smelter(self.game), 3)
+        self.game.player.inventory_bar.modify_amount(Press(self.game), 1)
+
+class BurnerMan(Quest):
+    def __init__(self, game) -> None:
+        super().__init__(game, "Burner Man", "Sell a plate")
+    def check_success(self) -> bool:
+        last_selled = self.game.player.selled[-1]
+        return type(last_selled) in (IronPlate, GoldPlate)
+    def give_reward(self) -> None:
+        self.game.player.gain(500)
+        self.game.player.inventory_bar.modify_amount(Smelter(self.game), 2)
+        self.game.player.inventory_bar.modify_amount(Press(self.game), 2)
 
 class Finished(Quest):
     def __init__(self, game) -> None:

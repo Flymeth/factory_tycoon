@@ -10,7 +10,7 @@ class Page():
 
         self.game: Game = game
         self.rect= rect
-        self.background= background
+        self.background= transform.scale(background, rect.size)
         self.parent= parent or self.game.pygame.screen
         self.active: bool= True
         self.child_page: Self | None= None

@@ -24,7 +24,7 @@ class MarketGUI(Page):
             (win_size[i] - (gui_width, gui_height)[i])/2
             for i in range(2)
         ]
-        super().__init__(game, Rect(x, y, gui_width, gui_height), transform.scale(texture, (gui_width, gui_height)))
+        super().__init__(game, Rect(x, y, gui_width, gui_height), texture)
         
         self.selector_rect = Rect(
             18*gui_width /44, 16*gui_height /64,

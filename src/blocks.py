@@ -1,5 +1,5 @@
 from direction_sys import Direction
-from items import Item, Stone
+from items import *
 from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface, Rect
@@ -93,6 +93,7 @@ class Block:
     def edit(self) -> bool: pass
     def fast_edit(self) -> bool: pass
     def postprocessing(self, texture: Surface) -> Surface: return texture
+    def item_predicate(self, item: Item) -> bool: return True
     def duplicate(self) -> Self:
         new_block = self.__class__(self.game)
         new_block.right_rotations= self.right_rotations
@@ -306,13 +307,38 @@ class Convoyer(Block):
             new_block.right_rotations%= 4
         return new_block
 
-
 class Connecter(Block):
     def __init__(self, game) -> None:
         super().__init__(game, identifier= "connecter", inputs= Direction.fast("h"), outputs= Direction.fast("s"), texture= "connecter", update_each= 100, max_storage_item= 2)
     def exec(self):
         self.processed_items+= [*self.processing_items]
         self.processing_items= []
+
+class Smelter(Block):
+    def __init__(self, game) -> None:
+        super().__init__(game, "smelter", Direction.fast("a"), Direction.fast("a"), texture= "smelter", rotable= False, update_each= 2000, max_storage_item= 2)
+    def exec(self):
+        if not self.processing_items: return
+        item= self.processing_items.pop()
+        item.temperature= 1
+        self.processed_items.append(item)
+
+class Press(Block):
+    def __init__(self, game) -> None:
+        super().__init__(game, "press", inputs= Direction.fast("n"), outputs= Direction.fast("s"), texture= "press", update_each= 1000, max_storage_item= 2)
+        self.transforms: dict[Item: Item] = {
+            IronIngot: IronPlate,
+            GoldIngot: GoldPlate
+        }
+    def item_predicate(self, item: Item) -> bool:
+        return item.temperature >= .5 and type(item) in self.transforms
+    def exec(self):
+        if not self.processing_items: return
+        item= self.processing_items.pop(0)
+        new_item: Item = self.transforms[type(item)](self.game)
+        new_item.temperature= item.temperature
+        self.processed_items.append(new_item)
+        
 
 class FloorBlock(Block):
     def __init__(self, game, identifier: str, texture="default_floor_texture") -> None:

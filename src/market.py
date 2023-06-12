@@ -13,7 +13,10 @@ class Market:
             Convoyer: 500,
             DiamondGenerator: 75000,
             Connecter: 25000,
-            Sorter: 25000
+            Sorter: 25000,
+            Trash: 2000,
+            Smelter: 8000,
+            Press: 7500
         }
         self.bought: list[tuple[type[Block], float]]= []
         

@@ -1,5 +1,5 @@
 from quests import Quest
-from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock
+from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press
 from items import Item
 from gui._assets import Page
 from gui.inventory_bar import InventoryBar
@@ -28,7 +28,9 @@ class Player:
         self.selled: list[Item]= []
         self.__is_clicking: list[int]= []
 
-        self.inventory_bar = InventoryBar(game, [(Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)])
+        self.inventory_bar = InventoryBar(game, [
+            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)
+        ])
         self.inventory_bar.set_selected_item(0)
 
         self.game.add_event(MOUSEBUTTONDOWN, lambda g, e: self.__set_clicking__(True, e.button))
