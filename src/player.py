@@ -29,7 +29,7 @@ class Player:
         self.__is_clicking: list[int]= []
 
         self.inventory_bar = InventoryBar(game, [
-            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1), (Smelter(game), 1)
+            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)
         ])
         self.inventory_bar.set_selected_item(0)
 
