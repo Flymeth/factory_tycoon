@@ -35,18 +35,18 @@ class Camera():
         self.position= position
         self.zoom= zoom
         self.moving_camera= False
-        self.game.add_event(MOUSEBUTTONUP, lambda g,e: self.handle_mouse_pressures(e.button, False))
-        self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.handle_mouse_pressures(e.button, True))
-        self.game.add_event(TICK_EVENT, lambda g,e: self.handle_camera_movements())
-        self.game.add_event(DRAW_EVENT, lambda g,e: self.draw())
-        self.game.add_event(MOUSEWHEEL, lambda g,e: self.handle_camera_zoom(e.y))
+        self.game.add_event(MOUSEBUTTONUP, lambda g,e: self.handle_mouse_pressures(e.button, False), only_for_scenes= ["ingame"])
+        self.game.add_event(MOUSEBUTTONDOWN, lambda g,e: self.handle_mouse_pressures(e.button, True), only_for_scenes= ["ingame"])
+        self.game.add_event(TICK_EVENT, lambda g,e: self.handle_camera_movements(), only_for_scenes= ["ingame"])
+        self.game.add_event(DRAW_EVENT, lambda g,e: self.draw(), only_for_scenes= ["ingame"])
+        self.game.add_event(MOUSEWHEEL, lambda g,e: self.handle_camera_zoom(e.y), only_for_scenes= ["ingame"])
 
         self.key_movements= {
             "position": [],
             "zoom": 0
         }
-        self.game.add_event(KEYDOWN, lambda g, e: self.key_down(e.key))
-        self.game.add_event(KEYUP, lambda g, e: self.key_up(e.key))
+        self.game.add_event(KEYDOWN, lambda g, e: self.key_down(e.key), only_for_scenes= ["ingame"])
+        self.game.add_event(KEYUP, lambda g, e: self.key_up(e.key), only_for_scenes= ["ingame"])
         self.min_max_zoom= (25, 100)
         self.min_max_position= [
             (-50000, 50000),

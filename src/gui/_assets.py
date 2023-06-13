@@ -12,7 +12,7 @@ class Page():
         self.rect= rect
         self.background= transform.scale(background, rect.size)
         self.parent= parent or self.game.pygame.screen
-        self.active: bool= True
+        self.active: bool= False
         self.child_page: Self | None= None
 
         self.game.add_event(LEFT_CLICK, lambda g, e: self.__handle_click__())
@@ -39,7 +39,7 @@ class Page():
             self.active = False
             return
         self.on_key_pressed()
-    def get_texture(self) -> Surface: return no_texture()
+    def get_texture(self) -> Surface: return self.background
     def on_click(self) -> None: pass
     def set_freezing(self, freeze: bool, do_for_player_interaction: bool= False) -> None:
         self.game.freeze_process = self.game.cam.freeze_position = self.game.cam.freeze_zoom = freeze
@@ -81,6 +81,7 @@ class Button():
         )
         return texture
     def draw(self):
+        self.active= True
         self.game.draw(self.get_texture(), self.rect.topleft)
     def __clicked__(self):
         if not self.active: return

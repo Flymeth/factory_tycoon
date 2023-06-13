@@ -6,6 +6,7 @@ import quests
 import market
 import gui
 import utils
+import menu
 from utils import properties
 from direction_sys import Direction
 from typing import Callable, Any, Self
@@ -51,6 +52,7 @@ class Modules:
     market= market
     gui= gui
     utils= utils
+    menu= menu
 
 class Pygame():
     def __init__(self, fps: int) -> None:
@@ -93,19 +95,23 @@ class Game:
         self.cache: dict[str, any]= {}
         self.intervals: dict[int, list[Callable[[Self, pg.event.Event], None]]] = {}
         self.__mouse_clicking_position: list[int]= []
-
-        self.cam= Camera(self)
-        self.map= map.Map(self)
-        self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy(), default_balance= 0)
-        self.marked= market.Market(self)
-
-        self.add_event(PROCESS_EVENT, lambda g, e: self.__update_interval_functions__())
-        self.add_event(pg.MOUSEBUTTONDOWN, lambda g, e: self.__mouse_clicking__(e.button, True))
-        self.add_event(pg.MOUSEBUTTONUP, lambda g, e: self.__mouse_clicking__(e.button, False))
+        self.scene= "menu"
 
         # Shorthands
         self.screen= self.pygame.screen
         self.draw= self.screen.blit
+
+        # Init all modules
+        self.cam= Camera(self)
+        self.map= map.Map(self)
+        self.player= player.Player(self, player_name, quests_to_achieve= self.AllTheQuests.copy(), default_balance= 0)
+        self.marked= market.Market(self)
+        self.menu = menu.Menu(self)
+
+        # Setting up events
+        self.add_event(PROCESS_EVENT, lambda g, e: self.__update_interval_functions__())
+        self.add_event(pg.MOUSEBUTTONDOWN, lambda g, e: self.__mouse_clicking__(e.button, True))
+        self.add_event(pg.MOUSEBUTTONUP, lambda g, e: self.__mouse_clicking__(e.button, False))
     def __mouse_clicking__(self, button: int, active: bool):
         if button in self.__mouse_clicking_position:
             if not active:
@@ -154,24 +160,45 @@ class Game:
         self.pygame.app.quit()
         return exit(0)
     
+    def change_scene(self, new_scene: str):
+        self.scene= new_scene
+    
     # EVENT MANAGERS
-    def each(self, ms: int, *handlers: Callable[[Self, pg.event.Event], None]):
+    def each(self, ms: int, *handlers: Callable[[Self, pg.event.Event], None], only_for_scenes: list[str]= []):
+        """ Execute an handler each x miliseconds
+
+            Argument <only_for_scenes>:
+                See the <fire_event> function
+        """
         if not ms in self.intervals:
             self.intervals[ms]= []
+        if only_for_scenes:
+            handlers= [
+                lambda g, e: (
+                    handler(g, e)
+                ) if self.scene in only_for_scenes else 0
+                for handler in handlers
+            ]
         self.intervals[ms]+= list(handlers)
     def __update_interval_functions__(self):
         infos = self.time_infos
         for ms, handlers in self.intervals.items():
             if infos.time["ms"] % ms <= infos.approximated_at:
                 [f(self, pg.event.Event(PROCESS_EVENT, {"time": infos})) for f in handlers]
-    def add_event(self, ev_identifier: Any, handler: Callable[[Self, pg.event.Event], None], once= False):
+    def add_event(self, ev_identifier: Any, handler: Callable[[Self, pg.event.Event], None], once= False, only_for_scenes: list[str]= []):
         """ Add an handler to an event
             Returns the handler's id
+
+            Argument <only_for_scenes>:
+                If this event should be fired only for certain scene. Keep this list empty to update it for any scenes
         """
         ev_id= self.next_event_id
         if not ev_identifier in self.events:
             self.events[ev_identifier]= []
-        self.events[ev_identifier].append((ev_id, handler, once))
+        fn = handler
+        if only_for_scenes:
+            fn= lambda g, e: (handler(g, e) if self.scene in only_for_scenes else 0)
+        self.events[ev_identifier].append((ev_id, fn, once))
 
         self.next_event_id+= 1
         return ev_id

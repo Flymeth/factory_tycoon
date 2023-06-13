@@ -16,9 +16,9 @@ class Map:
         self.matrice= [[FloorBlock(game, "center_block", "center")]]
 
         self.__center= 0, 0 # Les coordonnées du centre du monde
-        self.game.add_event(PROCESS_EVENT, lambda g, e: self.update())
+        self.game.add_event(PROCESS_EVENT, lambda g, e: self.update(), only_for_scenes= ["ingame"])
         if auto_generate_chunks:
-            self.game.add_event(PROCESS_EVENT, lambda g, e: self.check_and_generate_chunks())
+            self.game.add_event(PROCESS_EVENT, lambda g, e: self.check_and_generate_chunks(), only_for_scenes= ["ingame"])
     def update(self):
         """ Update the map's block
         """
@@ -223,21 +223,23 @@ class Map:
                     if not vanilla_block_possible_connection in block.inputs + block.outputs: continue
                     
                     # We do the same thing for the sided block
-                    side_block_possible_connection= (block_possible_connection +2) %4
+                    side_block_possible_connection= Direction.rotate(block_possible_connection, 2) # Make connection upside down
                     vanilla_side_block_possible_connection= Direction.rotate(side_block_possible_connection, times_rotating_left= side_block.right_rotations)
                     if not vanilla_side_block_possible_connection in side_block.inputs + side_block.outputs: continue
 
                     if (
-                        vanilla_side_block_possible_connection in side_block.inputs
-                        and vanilla_block_possible_connection in block.outputs
+                        vanilla_block_possible_connection in block.outputs
+                        and vanilla_side_block_possible_connection in side_block.inputs
                     ) or (
-                        vanilla_side_block_possible_connection in side_block.outputs
-                        and vanilla_block_possible_connection in block.inputs
+                        vanilla_block_possible_connection in block.inputs
+                        and vanilla_side_block_possible_connection in side_block.outputs
                     ):
                         receiver, sender = (
-                            (block, side_block) 
-                            if vanilla_block_possible_connection in block.inputs
-                            else (side_block, block)
+                            (block, side_block)
+                            if (
+                                vanilla_block_possible_connection in block.inputs
+                                and vanilla_side_block_possible_connection in side_block.outputs
+                            ) else (side_block, block)
                         )
                         receiver_connection, sender_connection= (
                             (vanilla_block_possible_connection, vanilla_side_block_possible_connection)

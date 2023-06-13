@@ -38,6 +38,12 @@
 
 > gui/*.py
 
+## Menu
+
+> menu.py
+
+* option pour sauvegarder/restaurer une partie
+
 ## Other
 
 > main project

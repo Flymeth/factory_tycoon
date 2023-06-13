@@ -6,7 +6,7 @@ from gui.inventory_bar import InventoryBar
 from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
-from typing import Literal
+from typing import Literal, Callable
 from custom_events_identifier import DRAW_EVENT, TICK_EVENT
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
@@ -29,7 +29,7 @@ class Player:
         self.__is_clicking: list[int]= []
 
         self.inventory_bar = InventoryBar(game, [
-            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)
+            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1), (Smelter(game), 1)
         ])
         self.inventory_bar.set_selected_item(0)
 
@@ -40,10 +40,10 @@ class Player:
         self.game.add_event(KEYDOWN, lambda g, e: self.key_pressed(e.key))
         self.game.add_event(DRAW_EVENT, lambda g, e: (
             self.draw_blockVisualisation(), self.inventory_bar.draw(), self.draw_hud(), self.handle_long_click()
-        ))
-        self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator())
+        ), only_for_scenes= ["ingame"])
+        self.game.add_event(TICK_EVENT, lambda g, e: self.quest_updator(), only_for_scenes= ["ingame"])
 
-        self.uis: list[Page] = [self.inventory_bar]
+        self.uis: list[Callable[[], Rect]] = [lambda: self.inventory_bar.rect]
         self.freeze_blocks_interaction= False
         pass
     def __set_clicking__(self, active: bool, btn: int):
@@ -56,6 +56,7 @@ class Player:
         if not self.quests: return
         if not self.active_quest:
             self.active_quest= self.quests[0](self.game)
+            self.uis.append(lambda: self.active_quest.get_surface()[1])
         
         self.active_quest.update_pourcentage()
         if self.active_quest.check_success():
@@ -110,8 +111,8 @@ class Player:
             self.game.map.actualize(cursor)
     def mouse_pos_type(self) -> Literal["block", "ui"]:
         x, y = mouse.get_pos()
-        for ui in self.uis:
-            rect= ui.rect
+        for getter in self.uis:
+            rect= getter()
             if(
                 rect.left <= x <= rect.left + rect.width
                 and  rect.top <= y <= rect.top + rect.height
@@ -168,7 +169,7 @@ class Player:
         block = self.game.map.delete(self.game.cam.get_cursor_coordonates())
         self.inventory_bar.modify_amount(block, 1)
     def draw_blockVisualisation(self):
-        if self.game.cam.moving_camera or self.freeze_blocks_interaction: return
+        if self.game.cam.moving_camera or self.freeze_blocks_interaction or self.mouse_pos_type() != "block": return
 
         coordonates= self.game.cam.get_cursor_coordonates()
         current_block= self.game.map.get_block(*coordonates)

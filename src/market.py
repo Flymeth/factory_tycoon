@@ -22,7 +22,7 @@ class Market:
         
 
         # self.game.add_event(PROCESS_EVENT, lambda g,e: self.decrease_values())
-        self.game.each(10000, (lambda g, e: self.decrease_values()))
+        self.game.each(10000, (lambda g, e: self.decrease_values()), only_for_scenes= ["ingame"])
         self.is_market_open = False
         pass
     def get_court(self, item: Item):

@@ -24,7 +24,7 @@ class Quest:
         """ Done la récompense au joueur
         """
         return
-    def draw(self):
+    def get_surface(self) -> tuple[Surface, Rect]:
         card_padding= 10
         progress_bar_height= 5
         card_width = 250
@@ -61,7 +61,10 @@ class Quest:
         progress_bar.blit(progress, (0, 0))
 
         card.blit(progress_bar, (card_padding, card_rect.height - card_padding - progress_bar_height))
-        self.game.draw(card, card_rect.topleft)
+        return card, card_rect
+    def draw(self):
+        texture, rect= self.get_surface()
+        self.game.draw(texture, rect)
 
 # Quest are set in order of their definition (First defined = First item in the AllTheQuest list)
 
