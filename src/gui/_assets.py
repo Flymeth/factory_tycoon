@@ -1,4 +1,4 @@
-from pygame import Rect, Surface, mouse, transform, KEYDOWN, key, K_ESCAPE, SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_ARROW, cursors
+from pygame import Rect, Surface, mouse, transform, KEYDOWN, key, K_ESCAPE
 from textures import get_texture
 from typing import Literal, Callable, Self
 from fonts import TITLE_FONT
@@ -79,7 +79,6 @@ class Button():
         self.game.draw(self.get_texture(), self.rect.topleft)
     def __clicked__(self):
         if self.__hovering:
-            mouse.set_cursor(cursors.Cursor(SYSTEM_CURSOR_ARROW))
             return self.onclick()
     def __set_hovering__(self):
         if not self.active:
@@ -101,7 +100,4 @@ class Button():
 
         if self.__hovering:
             texture.set_alpha(175)
-        mouse.set_cursor(cursors.Cursor(
-            SYSTEM_CURSOR_HAND if self.__hovering else SYSTEM_CURSOR_ARROW
-        ))
         return texture

@@ -2,7 +2,7 @@ from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press
 from items import Item
 from gui.inventory_bar import InventoryBar
-from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
+from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, K_DOLLAR, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal, Callable
@@ -13,6 +13,7 @@ fast_edit_key= K_a
 rotate_key= K_r
 edit_key= K_e
 market_key= K_m
+cheat_console_key= K_DOLLAR
 
 class Player:
     def __init__(self, game, name: str, default_balance= 0, quests_to_achieve: list[type[Quest]]= []) -> None:
@@ -51,6 +52,16 @@ class Player:
             self.__is_clicking.remove(btn)
         elif active and not is_containing:
             self.__is_clicking.append(btn)
+    def next_quest(self, success: bool= False):
+        if success:
+            self.active_quest.give_reward()
+            self.achieved_quests.append(self.active_quest)
+
+        next_quest_index = self.quests.index(self.active_quest.__class__) +1
+        if next_quest_index >= len(self.quests):
+            self.quests= []
+            self.active_quest= None
+        else: self.active_quest= self.quests[next_quest_index](self.game)
     def quest_updator(self):
         if not self.quests: return
         if not self.active_quest:
@@ -59,14 +70,7 @@ class Player:
         
         self.active_quest.update_pourcentage()
         if self.active_quest.check_success():
-            self.active_quest.give_reward()
-            self.achieved_quests.append(self.active_quest)
-
-            next_quest_index = self.quests.index(self.active_quest.__class__) +1
-            if next_quest_index >= len(self.quests):
-                self.quests= []
-                self.active_quest= None
-            else: self.active_quest= self.quests[next_quest_index](self.game)
+            self.next_quest(True)
     def gain(self, amount: float) -> float:
         self.balance+= amount
         if self.game.DEV_MODE:
@@ -86,6 +90,18 @@ class Player:
             except AssertionError as err:
                 if self.game.DEV_MODE:
                     print(f"Cannot open the market:\n{err}")
+            return
+        elif key == cheat_console_key:
+            note_msg= "(Note: to modify data, use the setattr(<object>, <property_name>, <value>) function.)"
+            print(note_msg, "/" + "-"*len(note_msg), sep= "\n")
+            cheat= input("|[FT-CHEAT-CONSOLE]>>> ")
+            try:
+                __GAME__= self.game
+                ans= eval(cheat)
+                print(f"|[FT-CHEAT-CONSOLE]:\n{ans}")
+            except Exception as err:
+                print(f"|[FT-CHEAT-CONSOLE]<ERROR>:\n{err}")
+            print("\\" + "-"*len(note_msg))
             return
         
         if self.freeze_blocks_interaction: return
@@ -176,14 +192,6 @@ class Player:
 
         selected = self.inventory_bar.get_selected_item()
         if not selected: return
-        if selected.item.rotable:
-            vel_x, vel_y= mouse.get_rel()
-            abs_x, abs_y= abs(vel_x), abs(vel_y)
-            if abs_x > 1 or abs_y > 1:
-                if abs_x >= abs_y:
-                    selected.item.right_rotations = 1 if vel_x > 0 else 3
-                else:
-                    selected.item.right_rotations = 2 if vel_y > 0 else 0
         block, amount = selected.item, selected.amount
         if not amount: return
         block._cache_coordonates= coordonates
