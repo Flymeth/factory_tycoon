@@ -1,8 +1,8 @@
-from pygame import Rect, Surface, mouse, transform, KEYDOWN, key, K_ESCAPE
-from textures import no_texture, get_texture
+from pygame import Rect, Surface, mouse, transform, KEYDOWN, key, K_ESCAPE, SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_ARROW, cursors
+from textures import get_texture
 from typing import Literal, Callable, Self
 from fonts import TITLE_FONT
-from custom_events_identifier import LEFT_CLICK
+from custom_events_identifier import LEFT_CLICK, DRAW_EVENT
 
 class Page():
     def __init__(self, game, rect: Rect, background: Surface, parent: Surface | None = None) -> None:
@@ -64,30 +64,44 @@ class Button():
         self.rect= rect
         self.onclick = on_click
         self.change_type(btn_type)
+        self.__hovering= False
 
         self.caption= text
         self.active= False
 
         self.click_event_id = self.game.add_event(LEFT_CLICK, lambda g,e: self.__clicked__())
+        self.game.add_event(DRAW_EVENT, lambda g,e: self.__set_hovering__())
     def change_type(self, btn_type: Literal["yes", "no"] | None = None):
         texture= get_texture("uis", f"button{f'_{btn_type}' if btn_type else ''}")
         self.texture= transform.scale(texture, self.rect.size)
-    def get_texture(self):
-        texture= self.texture
-        font_size = self.rect.width / len(self.caption)
-        font, font_rect = TITLE_FONT.render(self.caption, size= font_size)
-        texture.blit(font,
-            ((self.rect.width - font_rect.width)/2, (self.rect.height - font_rect.height)/2)
-        )
-        return texture
     def draw(self):
         self.active= True
         self.game.draw(self.get_texture(), self.rect.topleft)
     def __clicked__(self):
-        if not self.active: return
-        mx, my = mouse.get_pos()
-        if (
-            self.rect.left <= mx <= self.rect.right
-            and self.rect.top <= my <= self.rect.bottom
-        ):
+        if self.__hovering:
+            mouse.set_cursor(cursors.Cursor(SYSTEM_CURSOR_ARROW))
             return self.onclick()
+    def __set_hovering__(self):
+        if not self.active:
+            self.__hovering= False
+        mx, my = mouse.get_pos()
+        rect= self.rect
+        self.__hovering= (
+            rect.left <= mx <= rect.right
+            and rect.top <= my <= rect.bottom
+        )
+    def get_texture(self) -> Surface:        
+        texture= self.texture.copy()
+        font_size = self.rect.width / len(self.caption)
+        font, font_rect = TITLE_FONT.render(self.caption, size= font_size)
+        
+        texture.blit(font,
+            ((self.rect.width - font_rect.width)/2, (self.rect.height - font_rect.height)/2)
+        )
+
+        if self.__hovering:
+            texture.set_alpha(175)
+        mouse.set_cursor(cursors.Cursor(
+            SYSTEM_CURSOR_HAND if self.__hovering else SYSTEM_CURSOR_ARROW
+        ))
+        return texture

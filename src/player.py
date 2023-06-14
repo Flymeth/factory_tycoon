@@ -1,7 +1,6 @@
 from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press
 from items import Item
-from gui._assets import Page
 from gui.inventory_bar import InventoryBar
 from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
@@ -177,6 +176,14 @@ class Player:
 
         selected = self.inventory_bar.get_selected_item()
         if not selected: return
+        if selected.item.rotable:
+            vel_x, vel_y= mouse.get_rel()
+            abs_x, abs_y= abs(vel_x), abs(vel_y)
+            if abs_x > 1 or abs_y > 1:
+                if abs_x >= abs_y:
+                    selected.item.right_rotations = 1 if vel_x > 0 else 3
+                else:
+                    selected.item.right_rotations = 2 if vel_y > 0 else 0
         block, amount = selected.item, selected.amount
         if not amount: return
         block._cache_coordonates= coordonates
