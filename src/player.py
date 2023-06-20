@@ -2,7 +2,7 @@ from quests import Quest
 from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press
 from items import Item
 from gui.inventory_bar import InventoryBar
-from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, K_DOLLAR, display, transform, Rect
+from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, K_SPACE, K_DOLLAR, display, transform, Rect
 from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal, Callable
@@ -14,6 +14,7 @@ fast_edit_key= K_a
 rotate_key= K_r
 edit_key= K_e
 market_key= K_m
+get_back_to_center_key= K_SPACE
 cheat_console_key= K_DOLLAR
 
 class Player:
@@ -93,6 +94,8 @@ class Player:
                 if self.game.DEV_MODE:
                     print(f"Cannot open the market:\n{err}")
             return
+        elif key == get_back_to_center_key:
+            self.game.cam.position= [0, 0]
         elif key == cheat_console_key:
             note_msg= "(Note: to modify data, use the setattr(<object>, <property_name>, <value>) function.)"
             print(note_msg, "/" + "-"*len(note_msg), sep= "\n")

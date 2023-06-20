@@ -61,6 +61,7 @@ The only exeption is inside the Map object: the map's matrice requires the coord
 ### Other
 
 - **`m`**: Open the market GUI
+- **`space`**: Place the camera at the map's center
 
 ## Launching the game
 
