@@ -26,9 +26,14 @@ class MarketGUI(Page):
         ]
         super().__init__(game, Rect(x, y, gui_width, gui_height), texture)
         
+        INIT_GUI_PIXELS= texture.get_rect().size
+        INIT_GUI_BUTTON_POSITION= (18, 16)
+        INIT_GUI_BUTTON_SIZE= (9, 9)
         self.selector_rect = Rect(
-            18*gui_width /44, 16*gui_height /64,
-            9*gui_width /44,  9*gui_height /64
+            INIT_GUI_BUTTON_POSITION[0]*gui_width /INIT_GUI_PIXELS[0],
+            INIT_GUI_BUTTON_POSITION[1]*gui_height /INIT_GUI_PIXELS[1],
+            INIT_GUI_BUTTON_SIZE[0]*gui_width /INIT_GUI_PIXELS[0],
+            INIT_GUI_BUTTON_SIZE[1]*gui_height /INIT_GUI_PIXELS[1]
         )
         button_w = min(200, gui_width * .5)
         button_h = button_w/3
@@ -84,7 +89,7 @@ class MarketGUI(Page):
         
         # Titles and sub
         title, title_rect= TITLE_FONT_BOLD.render("The Shop", size= 30)
-        sub, sub_rect = auto_wrap(TEXT_FONT, 15, "Click on the item to modify your selection".upper(), self.rect.width - 10, 'center', paragraphes_spacement= 5)
+        sub, sub_rect = auto_wrap(TEXT_FONT, 15, "Click on the item to modify your selection".upper(), self.rect.width /2, 'center', paragraphes_spacement= 5)
 
         gui.blits((
             (title, ((self.rect.width - title_rect.width)/2, 20)),
