@@ -7,6 +7,7 @@ from fonts import TITLE_FONT_BOLD
 from textures import get_texture
 from typing import Literal, Callable
 from custom_events_identifier import DRAW_EVENT, TICK_EVENT
+from audio import get_audio
 
 keys_index = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9)
 fast_edit_key= K_a
@@ -58,10 +59,9 @@ class Player:
             self.achieved_quests.append(self.active_quest)
 
         next_quest_index = self.quests.index(self.active_quest.__class__) +1
-        if next_quest_index >= len(self.quests):
-            self.quests= []
-            self.active_quest= None
-        else: self.active_quest= self.quests[next_quest_index](self.game)
+        self.active_quest= self.quests[next_quest_index](self.game)
+        if next_quest_index < len(self.quests) -1:
+            get_audio("quests", "quest_achieved").play()
     def quest_updator(self):
         if not self.quests: return
         if not self.active_quest:
@@ -80,7 +80,9 @@ class Player:
         if key in keys_index:
             index= keys_index.index(key)
             if index >= len(self.inventory_bar.items): return
-            self.inventory_bar.set_selected_item(index)
+            done= self.inventory_bar.set_selected_item(index)
+            if done:
+                get_audio("blocks", "changed_block_selection").play()
             if self.game.DEV_MODE:
                 print(f"ITEM INDEX SET TO {index}.")
             return
@@ -114,14 +116,17 @@ class Player:
         if not block: return
         actualisation_required= False
         if key == fast_edit_key:
-            if not  getattr(block, "fast_edit", False): return
+            if not getattr(block, "fast_edit", False): return
             actualisation_required= block.fast_edit()
+            if actualisation_required != None:
+                get_audio("blocks", "edit_block").play()
         elif key == edit_key:
             actualisation_required= block.edit()
         elif key == rotate_key:
             if block.rotable:
                 block.right_rotations= (block.right_rotations +1)% 4
                 actualisation_required= True
+                get_audio("blocks", "rotate_block").play()
         if actualisation_required and not is_visualisationBlock:
             self.game.map.actualize(cursor)
     def mouse_pos_type(self) -> Literal["block", "ui"]:
@@ -167,8 +172,11 @@ class Player:
             index = gui_mouse_position_x // (self.inventory_bar.items_size + self.inventory_bar.paddings)
             if index >= len(self.inventory_bar.items):
                 return
-            if self.inventory_bar.set_selected_item(index) and self.game.DEV_MODE:
-                print(f"ITEM INDEX SET TO {index}.")
+            done= self.inventory_bar.set_selected_item(index)
+            if done:
+                get_audio("blocks", "changed_block_selection").play()
+                if self.game.DEV_MODE:
+                    print(f"ITEM INDEX SET TO {index}.")
     def place(self):
         assert self.game, "Cannot perform this action because the game object is required"
         coordonates = self.game.cam.get_cursor_coordonates()
@@ -179,10 +187,12 @@ class Player:
         placed= self.game.map.place(item.take_one(), coordonates)
         if placed:
             self.inventory_bar.modify_amount(item.item, -1)
+            get_audio("blocks", "place_block").play()
     def remove(self):
         assert self.game, "Cannot perform this action because the game object is required"
         block = self.game.map.delete(self.game.cam.get_cursor_coordonates())
         self.inventory_bar.modify_amount(block, 1)
+        get_audio("blocks", "delete_block").play()
     def draw_blockVisualisation(self):
         if self.game.cam.moving_camera or self.freeze_blocks_interaction or self.mouse_pos_type() != "block": return
 

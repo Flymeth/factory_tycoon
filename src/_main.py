@@ -7,6 +7,7 @@ import market
 import gui
 import utils
 import menu
+import audio
 from utils import properties
 from direction_sys import Direction
 from typing import Callable, Any, Self
@@ -53,6 +54,7 @@ class Modules:
     gui= gui
     utils= utils
     menu= menu
+    audio= audio
 
 class Pygame():
     def __init__(self, fps: int) -> None:
@@ -69,7 +71,7 @@ class Pygame():
         )
         pg.display.flip()
         pg.display.set_caption(f"Factory Tycoon ({'DEVELOPMENT MODE' if DEV_MODE else 'RELEASE MODE'})")
-        pg.display.set_icon(create_surface("src/assets/icon.png"))
+        pg.display.set_icon(create_surface("src/assets/textures/icon.png"))
         self.clock = pg.time.Clock()
         self.app = pg
         self.dt = 0
@@ -136,6 +138,7 @@ class Game:
         """
         self.add_event(pg.QUIT, lambda g, e: self.quit())
         pg.time.set_timer(PROCESS_EVENT, TimeInformation.MS_TIMER_INTERVAL)
+        audio.get_audio("musics", "music_temp").play(-1)
         while not self.update(): pass
 
     def update(self) -> bool:

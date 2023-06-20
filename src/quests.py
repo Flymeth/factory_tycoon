@@ -2,6 +2,7 @@ from pygame import Rect, Surface, display
 from fonts import TITLE_FONT, TEXT_FONT, auto_wrap
 from items import IronIngot, GoldIngot, IronPlate, GoldPlate
 from blocks import Sorter, Trash, FloorBlock, Connecter, Press, Smelter
+from audio import get_audio
 import colors
 
 class Quest:
@@ -168,6 +169,7 @@ class BurnerMan(Quest):
     def __init__(self, game) -> None:
         super().__init__(game, "Burner Man", "Sell a plate")
     def check_success(self) -> bool:
+        if not self.game.player.selled: return False
         last_selled = self.game.player.selled[-1]
         return type(last_selled) in (IronPlate, GoldPlate)
     def give_reward(self) -> None:
@@ -178,6 +180,7 @@ class BurnerMan(Quest):
 class Finished(Quest):
     def __init__(self, game) -> None:
         super().__init__(game, "Great Job!", "You've finished all the quests! Now have fun playing and chilling at our game.")
+        get_audio("quests", "all_quests_done").play()
 
 AllTheQuests: list[type[Quest]] = []
 for QuestType in vars().copy().values():

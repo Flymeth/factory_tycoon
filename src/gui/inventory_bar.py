@@ -2,6 +2,7 @@ from typing import Any
 from pygame import Surface, Rect, transform, display
 from fonts import TEXT_FONT
 from gui._assets import Page
+from audio import get_audio
 
 class InventoryItem():
     def __init__(self, game, amount: int, item: Any, rect: Rect) -> None:

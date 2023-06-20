@@ -25,7 +25,7 @@ class VideoSurface(Surface):
         )
 
 def no_texture() -> Surface:
-    return create_surface("src/assets/no_texture.png")
+    return create_surface("src/assets/textures/no_texture.png")
 
 def new_blank_texture(size: tuple[int, int]) -> Surface:
     return Surface(size, SRCALPHA, 32).convert_alpha()
@@ -35,7 +35,7 @@ def create_surface(texture_path: str) -> Surface:
     return image.load(texture_path, f"Image at path {texture_path}").convert_alpha()
 
 def get_texture_path(texture_category: str, texture_name: str, ext = "png"):
-    return f"src/assets/{texture_category}/{texture_name}.{ext}" if texture_category and texture_name else ""
+    return f"src/assets/textures/{texture_category}/{texture_name}.{ext}" if texture_category and texture_name else ""
 
 def get_texture(texture_category: str, texture_name: str, ext = "png") -> Surface:
     texture_path= get_texture_path(texture_category, texture_name, ext)

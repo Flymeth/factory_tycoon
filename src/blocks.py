@@ -127,9 +127,10 @@ class GlobalSeller(Seller):
 
 class Trash(Block):
     def __init__(self, game) -> None:
-        super().__init__(game, identifier= "trash", texture= "trash",  inputs= Direction.fast("a"), rotable= False, update_each= 1)
+        super().__init__(game, identifier= "trash", texture= "trash",  inputs= Direction.fast("a"), rotable= False, update_each= 1, max_storage_item= float("inf"))
     def exec(self):
-        self.processing_items= []
+        if self.processing_items:
+            self.processing_items= []
 
 class Generator(Block):
     def __init__(self, game, ingot_type: type[Item]= Stone, ingot_spawn_chance: float = .35) -> None:
