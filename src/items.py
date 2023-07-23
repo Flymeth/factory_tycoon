@@ -87,6 +87,33 @@ class IronPlate(Item):
             {Press: [IronIngot]}
         ]
 
+class IronString(Item):
+    def __init__(self, game) -> None:
+        from blocks import Stroker
+
+        super().__init__(game, "iron_string", 75)
+        self.crafts= {
+            Stroker: [IronIngot]
+        }
+
+class GoldString(Item):
+    def __init__(self, game) -> None:
+        from blocks import Stroker
+
+        super().__init__(game, "gold_string", 75)
+        self.crafts= {
+            Stroker: [GoldIngot]
+        }
+
+class DiamondString(Item):
+    def __init__(self, game) -> None:
+        from blocks import Stroker
+
+        super().__init__(game, "diamond_string", 75)
+        self.crafts= {
+            Stroker: [DiamondIngot]
+        }
+
 class Stone(Item):
     def __init__(self, game) -> None:
         from blocks import Generator

@@ -4,7 +4,7 @@ from random import random, choice
 from textures import get_texture
 from pygame import transform, display, Surface, Rect
 from gui.selector import Selector
-from typing import Self, Literal
+from typing import Self, Literal, Type
 
 class Block:
     def __init__(self, game, identifier: str, inputs: Direction.multiple= Direction.fast(), outputs: Direction.multiple= Direction.fast(), texture: str | Surface= "", decorative=False, default_level= 1, max_level= 20, right_rotations: int = 0, rotable: bool= True, update_each: int= 1000, max_storage_item= 1) -> None:
@@ -339,7 +339,23 @@ class Press(Block):
         new_item: Item = self.transforms[type(item)](self.game)
         new_item.temperature= item.temperature
         self.processed_items.append(new_item)
-        
+
+class Stroker(Block):
+    def __init__(self, game) -> None:
+        super().__init__(game, "stroker", inputs=Direction.fast("n"), outputs= Direction.fast("s"), texture= "stroker", max_storage_item= 3)
+        self.transforms: dict[Type[Item], Type[Item]] = {
+            IronIngot: IronString,
+            GoldIngot: GoldString,
+            DiamondIngot: DiamondString
+        }
+    def exec(self):
+        if len(self.processing_items) < 3: return
+        items = self.processing_items[:3]
+        if not [1 for item in items[1:] if item.name == items[0].name]: return
+        element = type(items[0])
+        if not element in self.transforms: return
+        self.processed_items.append(self.transforms[element](self.game))
+        for i in range(3): self.processing_items.pop()
 
 class FloorBlock(Block):
     def __init__(self, game, identifier: str, texture="default_floor_texture") -> None:

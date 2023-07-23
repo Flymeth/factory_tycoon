@@ -1,5 +1,5 @@
 from quests import Quest
-from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press
+from blocks import Trash, GlobalSeller, Convoyer, Sorter, Generator, Connecter, FloorBlock, Smelter, Press, Stroker
 from items import Item
 from gui.inventory_bar import InventoryBar
 from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP, mouse, KEYDOWN, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_a, K_m, K_r, K_e, K_SPACE, K_DOLLAR, display, transform, Rect
@@ -31,7 +31,7 @@ class Player:
         self.__is_clicking: list[int]= []
 
         self.inventory_bar = InventoryBar(game, [
-            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1)
+            (Generator(game), 10), (Convoyer(game), 200), (GlobalSeller(game), 1), (Stroker(game), 5)
         ])
         self.inventory_bar.set_selected_item(0)
 
